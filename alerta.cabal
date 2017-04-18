@@ -25,7 +25,20 @@ description:
 library
   hs-source-dirs:      src
   exposed-modules:     Alerta
+  other-modules:       Alerta.Types
+                     , Alerta.Util
   build-depends:       base >= 4.7 && < 5
+                     , aeson
+                     , aeson-pretty
+                     , containers
+                     , data-default
+                     , http-api-data
+                     , http-client
+                     , servant
+                     , servant-client
+                     , servant-server
+                     , text
+                     , time
   ghc-options:         -Wall
   default-language:    Haskell2010
 
