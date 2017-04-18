@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE LambdaCase         #-}
 {-# LANGUAGE OverloadedStrings  #-}
@@ -29,6 +30,7 @@ type Origin      = String
 type AlertType   = String
 type Customer    = String
 type Tag         = String
+type Limit       = Int    -- actually, a positive int
 type UUID        = String -- TODO actual UUID type?
 type Href        = String -- TODO use URL type for hrefs
 
@@ -101,6 +103,13 @@ data TrendIndication = MoreSevere | LessSevere | NoChange
 
 instance FromHttpApiData TrendIndication where
   parseQueryParam = parseBoundedTextData
+
+data Resp = OkResp | ErrorResp { respMessage :: String }
+  deriving (Show, Generic)
+
+--------------------------------------------------------------------------------
+-- alerts
+--------------------------------------------------------------------------------
 
 data Alert = Alert {
     alertResource    :: String
@@ -219,19 +228,199 @@ data StatusChange = StatusChange {
   , statusChangeText   :: Maybe String
   } deriving (Show, Generic)
 
-data Resp = OkResp | ErrorResp { respMessage :: String }
-  deriving (Show, Generic)
+
+--------------------------------------------------------------------------------
+-- environments
+--------------------------------------------------------------------------------
+
+data EnvironmentInfo = EnvironmentInfo {
+  environmentInfoCount       :: Int
+, environmentInfoEnvironment :: String
+} deriving (Show, Generic)
+
+data EnvironmentsResp = OkEnvironmentsResp {
+  okEnvironmentsRespMessage      :: Maybe String
+, okEnvironmentsRespTotal        :: Int
+, okEnvironmentsRespEnvironments :: [EnvironmentInfo]
+} | ErrorEnvironmentsResp {
+  errorEnvironmentsRespMessage :: String
+} deriving (Show, Generic)
+
+--------------------------------------------------------------------------------
+-- services
+--------------------------------------------------------------------------------
+
+data ServiceInfo = ServiceInfo {
+  serviceInfoCount       :: Int
+, serviceInfoEnvironment :: String
+, serviceInfoService     :: String
+} deriving (Show, Generic)
+
+data ServicesResp = OkServicesResp {
+  okServicesRespTotal    :: Int
+, okServicesRespServices :: [ServiceInfo]
+, okServicesRespMessage  :: Maybe String
+} | ErrorServicesResp {
+  errorServicesRespMessage :: String
+} deriving (Show, Generic)
+
+--------------------------------------------------------------------------------
+-- blackouts
+--------------------------------------------------------------------------------
+
+data Blackout = Blackout {
+  blackoutEnvironment :: Environment
+, blackoutResource    :: Maybe Resource
+, blackoutService     :: Maybe Service
+, blackoutEvent       :: Maybe Event
+, blackoutGroup       :: Maybe Group
+, blackoutTags        :: Maybe [Tag]
+, blackoutStartTime   :: Maybe UTCTime -- defaults to now
+, blackoutEndTime     :: Maybe UTCTime -- defaults to start + duration
+, blackoutDuration    :: Maybe Int     -- in seconds; can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+} deriving (Show, Generic)
+
+-- | helper for testing
+blackout :: Environment -> Blackout
+blackout env = Blackout env Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+
+data BlackoutInfo = BlackoutInfo {
+  blackoutInfoId          :: UUID
+, blackoutInfoPriority    :: Int
+{-
+priority is 1 by default
+            2 if resource and not event present
+            3 if service
+            4 if event and not resource
+            5 if group
+            6 if resource and event
+            7 if tags
+Somewhat bizarrely, the saved blackout only includes an attribute
+{resource,service,event,group,tags}
+if it was used to deduce the priority,
+i.e. a priority 6 blackout will have resource and event attributes,
+but no tags attribute, even if it was supplied when it was created.
+-}
+, blackoutInfoEnvironment :: Environment
+, blackoutInfoResource    :: Maybe Resource
+, blackoutInfoService     :: Maybe [Service]
+, blackoutInfoEvent       :: Maybe Event
+, blackoutInfoGroup       :: Maybe Group
+, blackoutInfoTags        :: Maybe [Tag]
+, blackoutInfoCustomer    :: Maybe Customer
+, blackoutInfoStartTime   :: UTCTime -- defaults to now
+, blackoutInfoEndTime     :: UTCTime -- defaults to start + duration
+, blackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+} deriving (Show, Generic)
+
+data BlackoutStatus = Active | Pending | Expired deriving (Show, Generic)
+
+data ExtendedBlackoutInfo = ExtendedBlackoutInfo {
+  extendedBlackoutInfoId          :: UUID
+, extendedBlackoutInfoPriority    :: Int    -- see comment above
+, extendedBlackoutInfoEnvironment :: Environment
+, extendedBlackoutInfoResource    :: Maybe Resource
+, extendedBlackoutInfoService     :: Maybe [Service]
+, extendedBlackoutInfoEvent       :: Maybe Event
+, extendedBlackoutInfoGroup       :: Maybe Group
+, extendedBlackoutInfoTags        :: Maybe [Tag]
+, extendedBlackoutInfoCustomer    :: Maybe Customer
+, extendedBlackoutInfoStartTime   :: UTCTime -- defaults to now
+, extendedBlackoutInfoEndTime     :: UTCTime -- defaults to start + duration
+, extendedBlackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+, extendedBlackoutInfoRemaining   :: Int
+, extendedBlackoutInfoStatus      :: BlackoutStatus    
+} deriving (Show, Generic)
+
+data BlackoutResp = OkBlackoutResp {
+  okBlackoutRespId       :: UUID
+, okBlackoutRespBlackout :: BlackoutInfo
+} | ErrorBlackoutResp {
+  errorBlackoutRespMessage :: String
+} deriving (Show, Generic)
+
+data BlackoutsResp = OkBlackoutsResp {
+  okBlackoutsRespTotal     :: Int
+, okBlackoutsRespBlackouts :: [ExtendedBlackoutInfo]
+, okBlackoutsRespMessage   :: Maybe String
+, okBlackoutsRespTime      :: UTCTime
+} | ErrorBlackoutsResp {
+  errorBlackoutsRespMessage :: String
+} deriving (Show, Generic)
 
 
-$( deriveJSON (toOpts 0 0 def)                      ''Severity         )
-$( deriveJSON (toOpts 1 1 def)                      ''Status           )
-$( deriveJSON (toOpts 1 1 def)                      ''Alert            )
-$( deriveJSON (toOpts 0 0 def { unwrap = False })   ''Tags             )
-$( deriveJSON (toOpts 0 0 def { unwrap = False })   ''Attributes       )
-$( deriveJSON (toOpts 3 2 def)                      ''AlertResp        )
-$( deriveJSON (toOpts 4 3 def)                      ''CreateAlertResp  )
-$( deriveJSON (toOpts 2 2 def)                      ''AlertInfo        )
-$( deriveJSON (toOpts 2 2 def)                      ''StatusChange     )
-$( deriveJSON (toOpts 2 1 def)                      ''Resp             )
-$( deriveJSON (toOpts 0 0 def)                      ''TrendIndication  )
-$( deriveJSON (toOpts 2 2 def { tag = "type" })     ''HistoryItem      )
+--------------------------------------------------------------------------------
+-- heartbeats
+--------------------------------------------------------------------------------
+
+data Heartbeat = Heartbeat {
+  heartbeatOrigin     :: Maybe Origin -- defaults to prog/nodename
+, heartbeatTags       :: [Tag]
+, heartbeatCreateTime :: Maybe UTCTime
+, heartbeatTimeout    :: Maybe Int    --seconds
+, heartbeatCustomer   :: Maybe String -- if not admin, gets overwritten
+} deriving (Show, Generic, Default)
+
+data HeartbeatInfo = HeartbeatInfo {
+  heartbeatInfoCreateTime  :: UTCTime
+, heartbeatInfoCustomer    :: Maybe Customer
+, heartbeatInfoHref        :: Href
+, heartbeatInfoId          :: UUID
+, heartbeatInfoOrigin      :: Origin
+, heartbeatInfoReceiveTime :: UTCTime
+, heartbeatInfoTags        :: [String]
+, heartbeatInfoTimeout     :: Int
+, heartbeatInfoType        :: String
+} deriving (Show, Generic)
+
+data CreateHeartbeatResp = OkCreateHeartbeatResp {
+  createHeartbeatRespId        :: UUID
+, createHeartbeatRespHeartbeat :: HeartbeatInfo
+} | ErrorCreateHeartbeatResp {
+  createHeartbeatRespMessage   :: String
+} deriving (Show, Generic)
+
+data HeartbeatResp = OkHeartbeatResp {
+  heartbeatRespHeartbeat :: HeartbeatInfo
+, heartbeatRespTotal     :: Int
+} | ErrorHeartbeatResp {
+  heartbeatRespMessage   :: String
+} deriving (Show, Generic)
+
+data HeartbeatsResp = OkHeartbeatsResp {
+  heartbeatsRespHeartbeats   :: [HeartbeatInfo]
+, heartbeatsRespTime         :: Maybe UTCTime
+, heartbeatsRespTotal        :: Int
+, heartbeatsRespMessage      :: Maybe String
+}| ErrorHeartbeatsResp {
+  heartbeatsRespErrorMessage :: String
+} deriving (Show, Generic)
+
+
+$( deriveJSON (toOpts 0 0 def)                    ''Severity             )
+$( deriveJSON (toOpts 1 1 def)                    ''Status               )
+$( deriveJSON (toOpts 1 1 def)                    ''Alert                )
+$( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Tags                 )
+$( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Attributes           )
+$( deriveJSON (toOpts 3 2 def)                    ''AlertResp            )
+$( deriveJSON (toOpts 4 3 def)                    ''CreateAlertResp      )
+$( deriveJSON (toOpts 2 2 def)                    ''AlertInfo            )
+$( deriveJSON (toOpts 2 2 def)                    ''StatusChange         )
+$( deriveJSON (toOpts 2 1 def)                    ''Resp                 )
+$( deriveJSON (toOpts 0 0 def)                    ''TrendIndication      )
+$( deriveJSON (toOpts 2 2 def { tag = "type" })   ''HistoryItem          )
+$( deriveJSON (toOpts 2 2 def)                    ''EnvironmentInfo      )
+$( deriveJSON (toOpts 3 2 def)                    ''EnvironmentsResp     )
+$( deriveJSON (toOpts 2 2 def)                    ''ServiceInfo          )
+$( deriveJSON (toOpts 3 2 def)                    ''ServicesResp         )
+$( deriveJSON (toOpts 1 1 def)                    ''Blackout             )
+$( deriveJSON (toOpts 2 2 def)                    ''BlackoutInfo         )
+$( deriveJSON (toOpts 2 0 def)                    ''BlackoutStatus       )
+$( deriveJSON (toOpts 3 3 def)                    ''ExtendedBlackoutInfo )
+$( deriveJSON (toOpts 3 2 def)                    ''BlackoutResp         )
+$( deriveJSON (toOpts 3 2 def)                    ''BlackoutsResp        )
+$( deriveJSON (toOpts 1 1 def)                    ''Heartbeat            )
+$( deriveJSON (toOpts 2 2 def)                    ''HeartbeatInfo        )
+$( deriveJSON (toOpts 3 3 def)                    ''CreateHeartbeatResp  )
+$( deriveJSON (toOpts 2 2 def)                    ''HeartbeatResp        )
+$( deriveJSON (toOpts 2 2 def)                    ''HeartbeatsResp       )
