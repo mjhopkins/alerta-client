@@ -30,25 +30,26 @@ type Origin      = String
 type AlertType   = String
 type Customer    = String
 type Tag         = String
+type User        = String
 type Limit       = Int    -- actually, a positive int
 type UUID        = String -- TODO actual UUID type?
 type Href        = String -- TODO use URL type for hrefs
 
 data Severity =
-    Security      -- 0     Black
-  | Critical      -- 1     Red
-  | Major         -- 2     Orange
-  | Minor         -- 3     Yellow
-  | Warning       -- 4     Blue
-  | Indeterminate -- 5     Silver
-  | Cleared       -- 5     Green
-  | Normal        -- 5     Green
-  | Ok            -- 5     Green
-  | Informational -- 6     Green
-  | Debug         -- 7     Purple
+    Unknown
   | Trace         -- 8     Grey
-  | Unknown
-  deriving (Eq, Show, Read, Ord, Generic)
+  | Debug         -- 7     Purple
+  | Informational -- 6     Green
+  | Ok            -- 5     Green
+  | Normal        -- 5     Green
+  | Cleared       -- 5     Green
+  | Indeterminate -- 5     Silver
+  | Warning       -- 4     Blue
+  | Minor         -- 3     Yellow
+  | Major         -- 2     Orange
+  | Critical      -- 1     Red
+  | Security      -- 0     Black
+  deriving (Eq, Ord, Bounded, Enum, Ix, Show, Read, Generic)
 
 instance ToHttpApiData Severity where
   toUrlPiece = T.pack . show
@@ -80,7 +81,7 @@ data Status =     --  Status Code
   | ClosedStatus  --  4
   | ExpiredStatus --  5
   | UnknownStatus --  9
-  deriving (Eq, Show, Read, Ord, Generic)
+  deriving (Eq, Ord, Bounded, Enum, Ix, Show, Read, Generic)
 
 instance ToHttpApiData Status where
   toUrlPiece = showTextLowercase
@@ -98,14 +99,18 @@ instance FromJSONKey Status where
     "unknown" -> pure UnknownStatus
     other     -> fail $ "Could not parse key \"" ++ T.unpack other ++ "\" as Status"
 
-data TrendIndication = MoreSevere | LessSevere | NoChange
-  deriving (Show, Bounded, Enum, Generic)
+data TrendIndication = NoChange | LessSevere | MoreSevere
+  deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
 
 instance FromHttpApiData TrendIndication where
   parseQueryParam = parseBoundedTextData
 
+--------------------------------------------------------------------------------
+-- basic response
+--------------------------------------------------------------------------------
+
 data Resp = OkResp | ErrorResp { respMessage :: String }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- alerts
@@ -132,8 +137,7 @@ data Alert = Alert {
   , alertTimeout     :: Maybe Int       -- in seconds, defaults to 86400 (24 hours)
   , alertRawData     :: Maybe String
   , alertCustomer    :: Maybe Customer
-  } deriving (Show, Generic)
-
+  } deriving (Eq, Show, Generic)
 
 -- | helper for testing
 mkAlert :: Resource -> Event -> Service -> Alert
@@ -187,7 +191,7 @@ data AlertInfo = AlertInfo {
   , alertInfoLastReceiveTime  :: UTCTime
   , alertInfoHistory          :: [HistoryItem]
   , alertInfoHref             :: Href
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data HistoryItem = StatusHistoryItem {
     historyItemEvent      :: Event
@@ -202,7 +206,7 @@ data HistoryItem = StatusHistoryItem {
   , historyItemId         :: UUID
   , historyItemUpdateTime :: UTCTime
   , historyItemValue      :: Value
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data CreateAlertResp = OkCreateAlertResp {
     okCreateAlertRespId         :: UUID
@@ -210,143 +214,142 @@ data CreateAlertResp = OkCreateAlertResp {
   , okCreateAlertRespMessage    :: Maybe Text      -- present when rate limited or in blackout
   } | ErrorCreateAlertResp {
     errorCreateAlertRespMessage :: Text
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data AlertResp = OkAlertResp {
     okAlertRespAlert      :: AlertInfo
   , okAlertRespTotal      :: Int
   } | ErrorAlertResp {
     errorAlertRespMessage :: Text
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
-newtype Tags = Tags { tags :: [Tag] } deriving (Show, Generic)
+newtype Tags = Tags { tags :: [Tag] } deriving (Eq, Show, Generic)
 
-newtype Attributes = Attributes { attributes :: Map String String } deriving (Show, Generic)
+newtype Attributes = Attributes { attributes :: Map String String } deriving (Eq, Show, Generic)
 
 data StatusChange = StatusChange {
     statusChangeStatus :: Status -- docs say not "unknown" but the api allows it (in fact any text is accepted)
   , statusChangeText   :: Maybe String
-  } deriving (Show, Generic)
-
+  } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- environments
 --------------------------------------------------------------------------------
 
 data EnvironmentInfo = EnvironmentInfo {
-  environmentInfoCount       :: Int
-, environmentInfoEnvironment :: String
-} deriving (Show, Generic)
+    environmentInfoCount       :: Int
+  , environmentInfoEnvironment :: String
+  } deriving (Eq, Show, Generic)
 
 data EnvironmentsResp = OkEnvironmentsResp {
-  okEnvironmentsRespMessage      :: Maybe String
-, okEnvironmentsRespTotal        :: Int
-, okEnvironmentsRespEnvironments :: [EnvironmentInfo]
-} | ErrorEnvironmentsResp {
-  errorEnvironmentsRespMessage :: String
-} deriving (Show, Generic)
+    okEnvironmentsRespMessage      :: Maybe String
+  , okEnvironmentsRespTotal        :: Int
+  , okEnvironmentsRespEnvironments :: [EnvironmentInfo]
+  } | ErrorEnvironmentsResp {
+    errorEnvironmentsRespMessage :: String
+  } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- services
 --------------------------------------------------------------------------------
 
 data ServiceInfo = ServiceInfo {
-  serviceInfoCount       :: Int
-, serviceInfoEnvironment :: String
-, serviceInfoService     :: String
-} deriving (Show, Generic)
+    serviceInfoCount       :: Int
+  , serviceInfoEnvironment :: String
+  , serviceInfoService     :: String
+  } deriving (Eq, Show, Generic)
 
 data ServicesResp = OkServicesResp {
-  okServicesRespTotal    :: Int
-, okServicesRespServices :: [ServiceInfo]
-, okServicesRespMessage  :: Maybe String
-} | ErrorServicesResp {
-  errorServicesRespMessage :: String
-} deriving (Show, Generic)
+    okServicesRespTotal    :: Int
+  , okServicesRespServices :: [ServiceInfo]
+  , okServicesRespMessage  :: Maybe String
+  } | ErrorServicesResp {
+    errorServicesRespMessage :: String
+  } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- blackouts
 --------------------------------------------------------------------------------
 
 data Blackout = Blackout {
-  blackoutEnvironment :: Environment
-, blackoutResource    :: Maybe Resource
-, blackoutService     :: Maybe Service
-, blackoutEvent       :: Maybe Event
-, blackoutGroup       :: Maybe Group
-, blackoutTags        :: Maybe [Tag]
-, blackoutStartTime   :: Maybe UTCTime -- defaults to now
-, blackoutEndTime     :: Maybe UTCTime -- defaults to start + duration
-, blackoutDuration    :: Maybe Int     -- in seconds; can be calculated from start and end, or else defaults to BLACKOUT_DURATION
-} deriving (Show, Generic)
+    blackoutEnvironment :: Environment
+  , blackoutResource    :: Maybe Resource
+  , blackoutService     :: Maybe Service
+  , blackoutEvent       :: Maybe Event
+  , blackoutGroup       :: Maybe Group
+  , blackoutTags        :: Maybe [Tag]
+  , blackoutStartTime   :: Maybe UTCTime -- defaults to now
+  , blackoutEndTime     :: Maybe UTCTime -- defaults to start + duration
+  , blackoutDuration    :: Maybe Int     -- in seconds; can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+  } deriving (Eq, Show, Generic)
 
 -- | helper for testing
 blackout :: Environment -> Blackout
 blackout env = Blackout env Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 data BlackoutInfo = BlackoutInfo {
-  blackoutInfoId          :: UUID
-, blackoutInfoPriority    :: Int
-{-
-priority is 1 by default
-            2 if resource and not event present
-            3 if service
-            4 if event and not resource
-            5 if group
-            6 if resource and event
-            7 if tags
-Somewhat bizarrely, the saved blackout only includes an attribute
-{resource,service,event,group,tags}
-if it was used to deduce the priority,
-i.e. a priority 6 blackout will have resource and event attributes,
-but no tags attribute, even if it was supplied when it was created.
--}
-, blackoutInfoEnvironment :: Environment
-, blackoutInfoResource    :: Maybe Resource
-, blackoutInfoService     :: Maybe [Service]
-, blackoutInfoEvent       :: Maybe Event
-, blackoutInfoGroup       :: Maybe Group
-, blackoutInfoTags        :: Maybe [Tag]
-, blackoutInfoCustomer    :: Maybe Customer
-, blackoutInfoStartTime   :: UTCTime -- defaults to now
-, blackoutInfoEndTime     :: UTCTime -- defaults to start + duration
-, blackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
-} deriving (Show, Generic)
+    blackoutInfoId          :: UUID
+  , blackoutInfoPriority    :: Int
+  {-
+  priority is 1 by default
+              2 if resource and not event present
+              3 if service
+              4 if event and not resource
+              5 if group
+              6 if resource and event
+              7 if tags
+  Somewhat bizarrely, the saved blackout only includes an attribute
+  {resource,service,event,group,tags}
+  if it was used to deduce the priority,
+  i.e. a priority 6 blackout will have resource and event attributes,
+  but no tags attribute, even if it was supplied when it was created.
+  -}
+  , blackoutInfoEnvironment :: Environment
+  , blackoutInfoResource    :: Maybe Resource
+  , blackoutInfoService     :: Maybe [Service]
+  , blackoutInfoEvent       :: Maybe Event
+  , blackoutInfoGroup       :: Maybe Group
+  , blackoutInfoTags        :: Maybe [Tag]
+  , blackoutInfoCustomer    :: Maybe Customer
+  , blackoutInfoStartTime   :: UTCTime -- defaults to now
+  , blackoutInfoEndTime     :: UTCTime -- defaults to start + duration
+  , blackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+  } deriving (Eq, Show, Generic)
 
-data BlackoutStatus = Active | Pending | Expired deriving (Show, Generic)
+data BlackoutStatus = Expired | Pending | Active deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
 
 data ExtendedBlackoutInfo = ExtendedBlackoutInfo {
-  extendedBlackoutInfoId          :: UUID
-, extendedBlackoutInfoPriority    :: Int    -- see comment above
-, extendedBlackoutInfoEnvironment :: Environment
-, extendedBlackoutInfoResource    :: Maybe Resource
-, extendedBlackoutInfoService     :: Maybe [Service]
-, extendedBlackoutInfoEvent       :: Maybe Event
-, extendedBlackoutInfoGroup       :: Maybe Group
-, extendedBlackoutInfoTags        :: Maybe [Tag]
-, extendedBlackoutInfoCustomer    :: Maybe Customer
-, extendedBlackoutInfoStartTime   :: UTCTime -- defaults to now
-, extendedBlackoutInfoEndTime     :: UTCTime -- defaults to start + duration
-, extendedBlackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
-, extendedBlackoutInfoRemaining   :: Int
-, extendedBlackoutInfoStatus      :: BlackoutStatus    
-} deriving (Show, Generic)
+    extendedBlackoutInfoId          :: UUID
+  , extendedBlackoutInfoPriority    :: Int    -- see comment above
+  , extendedBlackoutInfoEnvironment :: Environment
+  , extendedBlackoutInfoResource    :: Maybe Resource
+  , extendedBlackoutInfoService     :: Maybe [Service]
+  , extendedBlackoutInfoEvent       :: Maybe Event
+  , extendedBlackoutInfoGroup       :: Maybe Group
+  , extendedBlackoutInfoTags        :: Maybe [Tag]
+  , extendedBlackoutInfoCustomer    :: Maybe Customer
+  , extendedBlackoutInfoStartTime   :: UTCTime -- defaults to now
+  , extendedBlackoutInfoEndTime     :: UTCTime -- defaults to start + duration
+  , extendedBlackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+  , extendedBlackoutInfoRemaining   :: Int
+  , extendedBlackoutInfoStatus      :: BlackoutStatus
+  } deriving (Eq, Show, Generic)
 
 data BlackoutResp = OkBlackoutResp {
-  okBlackoutRespId       :: UUID
-, okBlackoutRespBlackout :: BlackoutInfo
-} | ErrorBlackoutResp {
-  errorBlackoutRespMessage :: String
-} deriving (Show, Generic)
+    okBlackoutRespId       :: UUID
+  , okBlackoutRespBlackout :: BlackoutInfo
+  } | ErrorBlackoutResp {
+    errorBlackoutRespMessage :: String
+  } deriving (Eq, Show, Generic)
 
 data BlackoutsResp = OkBlackoutsResp {
-  okBlackoutsRespTotal     :: Int
-, okBlackoutsRespBlackouts :: [ExtendedBlackoutInfo]
-, okBlackoutsRespMessage   :: Maybe String
-, okBlackoutsRespTime      :: UTCTime
-} | ErrorBlackoutsResp {
-  errorBlackoutsRespMessage :: String
-} deriving (Show, Generic)
+    okBlackoutsRespTotal     :: Int
+  , okBlackoutsRespBlackouts :: [ExtendedBlackoutInfo]
+  , okBlackoutsRespMessage   :: Maybe String
+  , okBlackoutsRespTime      :: UTCTime
+  } | ErrorBlackoutsResp {
+    errorBlackoutsRespMessage :: String
+  } deriving (Eq, Show, Generic)
 
 
 --------------------------------------------------------------------------------
@@ -354,47 +357,48 @@ data BlackoutsResp = OkBlackoutsResp {
 --------------------------------------------------------------------------------
 
 data Heartbeat = Heartbeat {
-  heartbeatOrigin     :: Maybe Origin -- defaults to prog/nodename
-, heartbeatTags       :: [Tag]
-, heartbeatCreateTime :: Maybe UTCTime
-, heartbeatTimeout    :: Maybe Int    --seconds
-, heartbeatCustomer   :: Maybe String -- if not admin, gets overwritten
-} deriving (Show, Generic, Default)
+    heartbeatOrigin     :: Maybe Origin -- defaults to prog/nodename
+  , heartbeatTags       :: [Tag]
+  , heartbeatCreateTime :: Maybe UTCTime
+  , heartbeatTimeout    :: Maybe Int    --seconds
+  , heartbeatCustomer   :: Maybe String -- if not admin, gets overwritten
+  } deriving (Eq, Show, Generic, Default)
 
 data HeartbeatInfo = HeartbeatInfo {
-  heartbeatInfoCreateTime  :: UTCTime
-, heartbeatInfoCustomer    :: Maybe Customer
-, heartbeatInfoHref        :: Href
-, heartbeatInfoId          :: UUID
-, heartbeatInfoOrigin      :: Origin
-, heartbeatInfoReceiveTime :: UTCTime
-, heartbeatInfoTags        :: [String]
-, heartbeatInfoTimeout     :: Int
-, heartbeatInfoType        :: String
-} deriving (Show, Generic)
+    heartbeatInfoCreateTime  :: UTCTime
+  , heartbeatInfoCustomer    :: Maybe Customer
+  , heartbeatInfoHref        :: Href
+  , heartbeatInfoId          :: UUID
+  , heartbeatInfoOrigin      :: Origin
+  , heartbeatInfoReceiveTime :: UTCTime
+  , heartbeatInfoTags        :: [String]
+  , heartbeatInfoTimeout     :: Int
+  , heartbeatInfoType        :: String
+  } deriving (Eq, Show, Generic)
 
 data CreateHeartbeatResp = OkCreateHeartbeatResp {
-  createHeartbeatRespId        :: UUID
-, createHeartbeatRespHeartbeat :: HeartbeatInfo
-} | ErrorCreateHeartbeatResp {
-  createHeartbeatRespMessage   :: String
-} deriving (Show, Generic)
+    createHeartbeatRespId        :: UUID
+  , createHeartbeatRespHeartbeat :: HeartbeatInfo
+  } | ErrorCreateHeartbeatResp {
+    createHeartbeatRespMessage   :: String
+  } deriving (Eq, Show, Generic)
 
 data HeartbeatResp = OkHeartbeatResp {
-  heartbeatRespHeartbeat :: HeartbeatInfo
-, heartbeatRespTotal     :: Int
-} | ErrorHeartbeatResp {
-  heartbeatRespMessage   :: String
-} deriving (Show, Generic)
+    heartbeatRespHeartbeat :: HeartbeatInfo
+  , heartbeatRespTotal     :: Int
+  } | ErrorHeartbeatResp {
+    heartbeatRespMessage   :: String
+  } deriving (Eq, Show, Generic)
 
 data HeartbeatsResp = OkHeartbeatsResp {
-  heartbeatsRespHeartbeats   :: [HeartbeatInfo]
-, heartbeatsRespTime         :: Maybe UTCTime
-, heartbeatsRespTotal        :: Int
-, heartbeatsRespMessage      :: Maybe String
-}| ErrorHeartbeatsResp {
-  heartbeatsRespErrorMessage :: String
-} deriving (Show, Generic)
+    heartbeatsRespHeartbeats   :: [HeartbeatInfo]
+  , heartbeatsRespTime         :: Maybe UTCTime
+  , heartbeatsRespTotal        :: Int
+  , heartbeatsRespMessage      :: Maybe String
+  }| ErrorHeartbeatsResp {
+    heartbeatsRespErrorMessage :: String
+  } deriving (Eq, Show, Generic)
+
 
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
