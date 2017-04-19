@@ -25,7 +25,9 @@ description:
 library
   hs-source-dirs:      src
   exposed-modules:     Alerta
-  other-modules:       Alerta.Types
+  other-modules:       Alerta.Auth
+                     , Alerta.Helpers
+                     , Alerta.Types
                      , Alerta.Util
   build-depends:       base >= 4.7 && < 5
                      , aeson

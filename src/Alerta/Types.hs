@@ -9,10 +9,13 @@ module Alerta.Types where
 import           Alerta.Util
 
 import           Data.Aeson
+import qualified Data.Aeson.Encoding       as E
 import           Data.Aeson.Types
 import           Data.Aeson.TH
 import           Data.Default
+import           Data.Ix
 import           Data.Map                  (Map)
+import           Data.String               (IsString(..))
 import qualified Data.Text as              T
 import           Data.Text                 (Text)
 import           Data.Time                 (UTCTime)
@@ -30,8 +33,9 @@ type Origin      = String
 type AlertType   = String
 type Customer    = String
 type Tag         = String
-type User        = String
-type Limit       = Int    -- actually, a positive int
+type Email       = String -- TODO actual email type
+type Provider    = String -- TODO make into data type
+type Limit       = Int    -- actually a positive int
 type UUID        = String -- TODO actual UUID type?
 type Href        = String -- TODO use URL type for hrefs
 
@@ -400,6 +404,78 @@ data HeartbeatsResp = OkHeartbeatsResp {
   } deriving (Eq, Show, Generic)
 
 
+--------------------------------------------------------------------------------
+-- API keys
+--------------------------------------------------------------------------------
+
+-- when using admin credentials, user must be present, or associated with account
+
+-- | 40-char UTF8
+data ApiKey = ApiKey { unApiKey :: !Text }
+  deriving (Eq, Show, Generic)
+
+instance IsString ApiKey where
+  fromString = ApiKey . T.pack
+
+instance FromJSON ApiKey where
+  parseJSON = withText "API key" (pure . ApiKey)
+
+instance ToJSON ApiKey where
+  toJSON (ApiKey k) = String k
+  {-# INLINE toJSON #-}
+
+  toEncoding (ApiKey k) = E.text k
+  {-# INLINE toEncoding #-}
+
+instance ToHttpApiData ApiKey where
+  toUrlPiece (ApiKey k) = k
+
+data CreateApiKey = CreateApiKey {
+    createApiKeyUser     :: Maybe Email       -- only read if authorised as admin, defaults to current user
+  , createApiKeyCustomer :: Maybe Customer   -- only read if authorised as admin, defaults to current customer
+  , createApiKeyType     :: Maybe ApiKeyType -- defaults to read-only
+  , createApiKeyText     :: Maybe String     -- defaults to "API Key for $user"
+  } deriving (Eq, Show, Generic, Default)
+
+data ApiKeyType = ReadOnly | ReadWrite deriving (Eq, Ord, Bounded, Enum, Ix, Generic)
+
+instance Show ApiKeyType where
+  show ReadWrite = "read-write"
+  show ReadOnly  = "read-only"
+
+instance ToJSON ApiKeyType where
+  toJSON = genericToJSON $ defaultOptions { constructorTagModifier = camelTo2 '-'}
+
+instance FromJSON ApiKeyType where
+  parseJSON = genericParseJSON $ defaultOptions { constructorTagModifier = camelTo2 '-'}
+
+data ApiKeyInfo = ApiKeyInfo {
+    apiKeyInfoUser         :: Email
+  , apiKeyInfoKey          :: ApiKey
+  , apiKeyInfoType         :: ApiKeyType
+  , apiKeyInfoText         :: String
+  , apiKeyInfoExpireTime   :: UTCTime
+  , apiKeyInfoCount        :: Int -- number of times used
+  , apiKeyInfoLastUsedTime :: Maybe UTCTime
+  , apiKeyInfoCustomer     :: Maybe Customer
+  } deriving (Eq, Show, Generic)
+
+data CreateApiKeyResp = OkCreateApiKeyResp {
+    okCreateApiKeyRespKey        :: ApiKey 
+  , okCreateApiKeyRespData       :: ApiKeyInfo
+  } | ErrorCreateApiKeyResp {
+    errorCreateApiKeyRespMessage :: String
+  } deriving (Eq, Show, Generic)
+
+data ApiKeysResp = OkApiKeysResp {
+    okApiKeysRespKeys       :: [ApiKeyInfo]
+  , okApiKeysRespTotal      :: Int
+  , okApiKeysRespTime       :: UTCTime
+  , okApiKeysRespMessage    :: Maybe String
+  } | ErrorApiKeysResp {
+    errorApiKeysRespMessage :: String
+  } deriving (Eq, Show, Generic)
+
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )
@@ -428,3 +504,7 @@ $( deriveJSON (toOpts 2 2 def)                    ''HeartbeatInfo        )
 $( deriveJSON (toOpts 3 3 def)                    ''CreateHeartbeatResp  )
 $( deriveJSON (toOpts 2 2 def)                    ''HeartbeatResp        )
 $( deriveJSON (toOpts 2 2 def)                    ''HeartbeatsResp       )
+$( deriveJSON (toOpts 3 3 def)                    ''CreateApiKey         )
+$( deriveJSON (toOpts 3 3 def)                    ''ApiKeyInfo           )
+$( deriveJSON (toOpts 5 4 def)                    ''CreateApiKeyResp     )
+$( deriveJSON (toOpts 4 3 def)                    ''ApiKeysResp          )

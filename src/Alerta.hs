@@ -4,6 +4,7 @@
 
 module Alerta where
 
+import           Alerta.Auth
 import           Alerta.Types
 import           Servant
 import           Servant.Client
@@ -21,35 +22,41 @@ The alerta API allows you to query/modify
 -}
 
 type AlertApi
-  =    "alert" :> ReqBody '[JSON] Alert :> Post '[JSON] CreateAlertResp
-  :<|> "alert" :> Capture "id" UUID     :> Get '[JSON] AlertResp
-  :<|> "alert" :> Capture "id" UUID     :> Delete '[JSON] Resp
-  :<|> "alert" :> Capture "id" UUID     :> "status"      :> ReqBody '[JSON] StatusChange :> Put '[JSON] Resp
-  :<|> "alert" :> Capture "id" UUID     :> "tag"         :> ReqBody '[JSON] Tags         :> Put '[JSON] Resp
-  :<|> "alert" :> Capture "id" UUID     :> "untag"       :> ReqBody '[JSON] Tags         :> Put '[JSON] Resp
-  :<|> "alert" :> Capture "id" UUID     :> "attributes"  :> ReqBody '[JSON] Attributes   :> Put '[JSON] Resp
+  =    WithApiKey :> "alert" :> ReqBody '[JSON] Alert :> Post '[JSON] CreateAlertResp
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> Get '[JSON] AlertResp
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> Delete '[JSON] Resp
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "status"      :> ReqBody '[JSON] StatusChange :> Put '[JSON] Resp
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "tag"         :> ReqBody '[JSON] Tags         :> Put '[JSON] Resp
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "untag"       :> ReqBody '[JSON] Tags         :> Put '[JSON] Resp
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "attributes"  :> ReqBody '[JSON] Attributes   :> Put '[JSON] Resp
 
 type Query a   = a --TODO
 type Limited a = QueryParam "limit" Limit :> a
 
 -- An environment cannot be created – it is a dynamically derived resource based on existing alerts.
 type EnvironmentApi
- = "environments" :> Limited (Query (Get '[JSON] EnvironmentsResp))
+ = WithApiKey :> "environments" :> Limited (Query (Get '[JSON] EnvironmentsResp))
 -- 
 -- A service cannot be created – it is a dynamically derived resource based on existing alerts.
 type ServiceApi
- = "services" :> Limited (Query (Get '[JSON] ServicesResp))
+ = WithApiKey :> "services" :> Limited (Query (Get '[JSON] ServicesResp))
 
 type BlackoutApi
- =    "blackout"  :> ReqBody '[JSON] Blackout :> Post '[JSON] BlackoutResp
- :<|> "blackout"  :> Capture "blackout" UUID  :> Delete '[JSON] Resp
- :<|> "blackouts" :> Get '[JSON] BlackoutsResp
+ =    WithApiKey :> "blackout"  :> ReqBody '[JSON] Blackout :> Post '[JSON] BlackoutResp
+ :<|> WithApiKey :> "blackout"  :> Capture "blackout" UUID  :> Delete '[JSON] Resp
+ :<|> WithApiKey :> "blackouts" :> Get '[JSON] BlackoutsResp
 
 type HeartbeatApi
- =     "heartbeat"  :> ReqBody '[JSON] Heartbeat :> Post '[JSON] CreateHeartbeatResp
- :<|>  "heartbeat"  :> Capture "id" UUID         :> Get '[JSON] HeartbeatResp
- :<|>  "heartbeat"  :> Capture "id" UUID         :> Delete '[JSON] Resp
- :<|>  "heartbeats" :> Get '[JSON] HeartbeatsResp
+ =     WithApiKey :> "heartbeat"  :> ReqBody '[JSON] Heartbeat :> Post '[JSON] CreateHeartbeatResp
+ :<|>  WithApiKey :> "heartbeat"  :> Capture "id" UUID         :> Get '[JSON] HeartbeatResp
+ :<|>  WithApiKey :> "heartbeat"  :> Capture "id" UUID         :> Delete '[JSON] Resp
+ :<|>  WithApiKey :> "heartbeats" :> Get '[JSON] HeartbeatsResp
+
+type ApiKeyApi
+ =     NeedApiKey :> "key"  :> ReqBody '[JSON] CreateApiKey :> Post '[JSON] CreateApiKeyResp
+ :<|>  WithApiKey :> "key"  :> Capture "key" ApiKey         :> Delete '[JSON] Resp
+ :<|>  WithApiKey :> "keys" :> Get '[JSON] ApiKeysResp
+
 
 createAlert            :<|> 
  getAlert              :<|> 
@@ -71,4 +78,8 @@ createHeartbeat  :<|>
  getHeartbeat    :<|>
  deleteHeartbeat :<|>
  listHeartbeats = client (Proxy :: Proxy HeartbeatApi)
+
+createApiKey   :<|>
+  deleteApiKey :<|>
+  listApiKeys = client (Proxy :: Proxy ApiKeyApi)
 
