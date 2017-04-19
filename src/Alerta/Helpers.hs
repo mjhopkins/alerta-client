@@ -28,7 +28,7 @@ run :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO a
 run cl = do
   manager <- newManager defaultManagerSettings
   res <- runClientM cl (clientEnv manager)
-  either handleError (\r -> putStrLn "Success" >> prettyPrint r >> return r) res
+  either handleError (\r -> prettyPrint r >> putStrLn "Success" >> return r) res
 
 run' :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO ()
 run' = void . run
