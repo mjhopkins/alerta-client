@@ -1,5 +1,8 @@
+{-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE KindSignatures     #-}
 {-# LANGUAGE LambdaCase         #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
@@ -8,17 +11,21 @@ module Alerta.Types where
 
 import           Alerta.Util
 
+import           Control.Applicative (empty)
+
 import           Data.Aeson
-import qualified Data.Aeson.Encoding       as E
+import qualified Data.Aeson.Encoding as E
 import           Data.Aeson.Types
 import           Data.Aeson.TH
+import           Data.Coerce         (coerce)
 import           Data.Default
 import           Data.Ix
-import           Data.Map                  (Map)
-import           Data.String               (IsString(..))
-import qualified Data.Text as              T
-import           Data.Text                 (Text)
-import           Data.Time                 (UTCTime)
+import           Data.Map            (Map)
+import           Data.Monoid         ((<>))
+import           Data.String         (IsString(..))
+import qualified Data.Text as        T
+import           Data.Text           (Text)
+import           Data.Time           (UTCTime)
 
 import           GHC.Generics
 
@@ -476,6 +483,140 @@ data ApiKeysResp = OkApiKeysResp {
     errorApiKeysRespMessage :: String
   } deriving (Eq, Show, Generic)
 
+--------------------------------------------------------------------------------
+-- users
+--------------------------------------------------------------------------------
+
+-- alerta doesn't require login, password but returns a 500 if they are missing
+-- yay, cowboy coding
+data User = User {
+    userName          :: String
+  , userLogin         :: Email
+  , userPassword      :: String
+  , userProvider      :: Maybe Provider
+  , userText          :: Maybe String
+  , userEmailVerified :: Maybe Bool
+  } deriving (Show, Generic)
+
+user :: String -> Email -> String -> User
+user name login password = User name login password Nothing Nothing Nothing
+
+-- bugs:
+-- * can't update password without also passing provider=basic
+--   as alerta checks the update message, not the user
+-- * can't set email_verified to false without providing another parameter
+data UserUpdate = UserUpdate {
+    userUpdateName          :: Maybe String
+  , userUpdateLogin         :: Maybe Email
+  , userUpdatePassword      :: Maybe String
+  , userUpdateProvider      :: Maybe Provider
+  , userUpdateText          :: Maybe String
+  , userUpdateEmail_verified :: Maybe Bool
+  } deriving (Show, Generic, Default)
+
+data IsEmpty = Empty | Nonempty | UnknownIfEmpty
+
+data UserAttr (u :: IsEmpty) = UserAttr {
+    userAttrName           :: Maybe String
+  , userAttrLogin          :: Maybe Email
+  , userAttrPassword       :: Maybe String
+  , userAttrProvider       :: Maybe Provider
+  , userAttrText           :: Maybe String
+  , userAttrEmail_verified :: Maybe Bool
+  } deriving (Eq, Show, Generic)
+
+emptyUserAttr :: UserAttr 'Empty
+emptyUserAttr = UserAttr Nothing Nothing Nothing Nothing Nothing Nothing
+
+checkNonempty :: UserAttr u -> Either (UserAttr 'Empty) (UserAttr 'Nonempty)
+checkNonempty a@(UserAttr Nothing Nothing Nothing Nothing Nothing Nothing) =  Left $ coerce a
+checkNonempty a = Right $ coerce a
+
+instance Default (UserAttr 'Empty) where
+  def = emptyUserAttr
+
+-- TODO omitNothingFields doesn't work
+instance ToJSON (UserAttr 'Nonempty) where
+  toJSON = genericToJSON $ defaultOptions { omitNothingFields = True }
+
+  toEncoding (UserAttr n l pw pr t ev) =
+    pairs $
+     "name"           .= n  <>
+     "login"          .= l  <>
+     "password"       .= pw <>
+     "provider"       .= pr <>
+     "text"           .= t  <>
+     "email_verified" .= ev
+
+instance FromJSON (UserAttr 'UnknownIfEmpty) where
+  parseJSON (Object v) =
+    UserAttr <$>
+      v .:? "name" <*>
+      v .:? "login" <*>
+      v .:? "password" <*>
+      v .:? "provider" <*>
+      v .:? "text" <*>
+      v .:? "email_verified"
+  parseJSON _ = empty
+
+withUserName          :: UserAttr u -> String   -> UserAttr 'Nonempty
+withUserLogin         :: UserAttr u -> Email    -> UserAttr 'Nonempty
+withUserPassword      :: UserAttr u -> String   -> UserAttr 'Nonempty
+withUserProvider      :: UserAttr u -> Provider -> UserAttr 'Nonempty
+withUserText          :: UserAttr u -> String   -> UserAttr 'Nonempty
+withUserEmailVerified :: UserAttr u -> Bool     -> UserAttr u
+withUserName          u s = u { userAttrName = Just s }
+withUserLogin         u s = u { userAttrLogin = Just s }
+-- sets the provider to basic to work around the bug mentioned above
+withUserPassword      u s = u { userAttrPassword = Just s, userAttrProvider = Just "basic" }
+withUserProvider      u s = u { userAttrProvider = Just s }
+withUserText          u s = u { userAttrText = Just s }
+withUserEmailVerified u b = u { userAttrEmail_verified = Just b }
+
+data UserInfo = UserInfo {
+    userInfoCreateTime     :: UTCTime
+  , userInfoId             :: UUID
+  , userInfoName           :: String
+  , userInfoProvider       :: Provider
+  , userInfoLogin          :: Email
+  , userInfoText           :: String
+  , userInfoEmail_verified :: Bool
+  } deriving (Show, Generic)
+
+data RoleType = UserRoleType | AdminRoleType
+ deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
+
+data ExtendedUserInfo = ExtendedUserInfo {
+    extendedUserInfoCreateTime     :: UTCTime
+  , extendedUserInfoId             :: UUID
+  , extendedUserInfoName           :: String
+  , extendedUserInfoLogin          :: Email
+  , extendedUserInfoProvider       :: Provider
+  , extendedUserInfoRole           :: RoleType
+  , extendedUserInfoText           :: String
+  , extendedUserInfoEmail_verified :: Bool
+  } deriving (Show, Generic)
+
+data UserResp = OkUserResp {
+    okUserRespId   :: UUID
+  , okUserRespUser :: UserInfo
+  } | ErrorUserResp {
+    errorUserRespMessage :: String
+  } deriving (Show, Generic)
+
+data UsersResp = OkUsersResp {
+    okUsersRespUsers   :: [ExtendedUserInfo]
+  , okUsersRespTotal   :: Int
+  , okUsersRespDomains :: [String]       -- allowed email domains
+  , okUsersRespGroups  :: [String]       -- allowed Gitlab groups
+  , okUsersRespOrgs    :: [String]       -- allowed Github orgs
+  , okUsersRespRoles   :: Maybe [String] -- allowed Keycloud roles
+  , okUsersRespTime    :: UTCTime
+  , okUsersRespMessage :: Maybe String
+  } | ErrorUsersResp {
+    errorUsersResp :: String
+  } deriving (Show, Generic)
+
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )
@@ -508,3 +649,9 @@ $( deriveJSON (toOpts 3 3 def)                    ''CreateApiKey         )
 $( deriveJSON (toOpts 3 3 def)                    ''ApiKeyInfo           )
 $( deriveJSON (toOpts 5 4 def)                    ''CreateApiKeyResp     )
 $( deriveJSON (toOpts 4 3 def)                    ''ApiKeysResp          )
+$( deriveJSON (toOpts 3 2 def)                    ''RoleType             )
+$( deriveJSON (toOpts 1 1 def)                    ''User                 )
+$( deriveJSON (toOpts 2 2 def)                    ''UserInfo             )
+$( deriveJSON (toOpts 3 3 def)                    ''ExtendedUserInfo     )
+$( deriveJSON (toOpts 3 2 def)                    ''UserResp             )
+$( deriveJSON (toOpts 3 2 def)                    ''UsersResp            )

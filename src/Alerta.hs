@@ -57,6 +57,11 @@ type ApiKeyApi
  :<|>  WithApiKey :> "key"  :> Capture "key" ApiKey         :> Delete '[JSON] Resp
  :<|>  WithApiKey :> "keys" :> Get '[JSON] ApiKeysResp
 
+type UserApi
+ =    WithApiKey :> "user"  :> ReqBody '[JSON] User     :> Post '[JSON] UserResp
+ :<|> WithApiKey :> "user"  :> Capture "user" UUID      :> Delete '[JSON] Resp
+ :<|> WithApiKey :> "user"  :> Capture "user" UUID      :> ReqBody '[JSON] (UserAttr 'Nonempty) :> Put '[JSON] Resp
+ :<|> WithApiKey :> "users" :> QueryParam "name" String :> QueryParam "login" Email             :> Get '[JSON] UsersResp
 
 createAlert            :<|> 
  getAlert              :<|> 
@@ -82,4 +87,9 @@ createHeartbeat  :<|>
 createApiKey   :<|>
   deleteApiKey :<|>
   listApiKeys = client (Proxy :: Proxy ApiKeyApi)
+
+createUser  :<|>
+ deleteUser :<|>
+ updateUser :<|>
+ listUsers = client (Proxy :: Proxy UserApi)
 
