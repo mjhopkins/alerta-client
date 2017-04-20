@@ -92,4 +92,3 @@ createUser  :<|>
  deleteUser :<|>
  updateUser :<|>
  listUsers = client (Proxy :: Proxy UserApi)
-

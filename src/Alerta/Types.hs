@@ -31,20 +31,22 @@ import           GHC.Generics
 
 import           Web.HttpApiData
 
-type Resource    = String
-type Event       = String
-type Service     = String
-type Environment = String
-type Group       = String
-type Origin      = String
-type AlertType   = String
-type Customer    = String
-type Tag         = String
-type Email       = String -- TODO actual email type
-type Provider    = String -- TODO make into data type
-type Limit       = Int    -- actually a positive int
-type UUID        = String -- TODO actual UUID type?
-type Href        = String -- TODO use URL type for hrefs
+type Resource     = String
+type Event        = String
+type Service      = String
+type Environment  = String
+type Group        = String
+type Origin       = String
+type AlertType    = String
+type UserName     = String
+type CustomerName = String
+type Tag          = String
+type Email        = String -- TODO actual email type
+type Password     = String
+type Provider     = String -- TODO make into data type
+type Limit        = Int    -- actually a positive int
+type UUID         = String -- TODO actual UUID type?
+type Href         = String -- TODO use URL type for hrefs
 
 data Severity =
     Unknown
@@ -128,9 +130,9 @@ data Resp = OkResp | ErrorResp { respMessage :: String }
 --------------------------------------------------------------------------------
 
 data Alert = Alert {
-    alertResource    :: String
+    alertResource    :: Resource
   , alertEvent       :: Event
-  , alertEnvironment :: Maybe String
+  , alertEnvironment :: Maybe Environment
   , alertSeverity    :: Maybe Severity
   , alertCorrelate   :: Maybe [Event]
   , alertStatus      :: Maybe Status
@@ -147,7 +149,7 @@ data Alert = Alert {
   , alertCreateTime  :: Maybe UTCTime   -- defaults to utcnow()
   , alertTimeout     :: Maybe Int       -- in seconds, defaults to 86400 (24 hours)
   , alertRawData     :: Maybe String
-  , alertCustomer    :: Maybe Customer
+  , alertCustomer    :: Maybe CustomerName
   } deriving (Eq, Show, Generic)
 
 -- | helper for testing
@@ -192,7 +194,7 @@ data AlertInfo = AlertInfo {
   , alertInfoCreateTime       :: UTCTime
   , alertInfoTimeout          :: Int
   , alertInfoRawData          :: String
-  , alertInfoCustomer         :: Maybe Customer
+  , alertInfoCustomer         :: Maybe CustomerName
   , alertInfoDuplicateCount   :: Int
   , alertInfoRepeat           :: Bool
   , alertInfoPreviousSeverity :: Severity
@@ -249,7 +251,7 @@ data StatusChange = StatusChange {
 
 data EnvironmentInfo = EnvironmentInfo {
     environmentInfoCount       :: Int
-  , environmentInfoEnvironment :: String
+  , environmentInfoEnvironment :: Environment
   } deriving (Eq, Show, Generic)
 
 data EnvironmentsResp = OkEnvironmentsResp {
@@ -266,8 +268,8 @@ data EnvironmentsResp = OkEnvironmentsResp {
 
 data ServiceInfo = ServiceInfo {
     serviceInfoCount       :: Int
-  , serviceInfoEnvironment :: String
-  , serviceInfoService     :: String
+  , serviceInfoEnvironment :: Environment
+  , serviceInfoService     :: Service
   } deriving (Eq, Show, Generic)
 
 data ServicesResp = OkServicesResp {
@@ -321,7 +323,7 @@ data BlackoutInfo = BlackoutInfo {
   , blackoutInfoEvent       :: Maybe Event
   , blackoutInfoGroup       :: Maybe Group
   , blackoutInfoTags        :: Maybe [Tag]
-  , blackoutInfoCustomer    :: Maybe Customer
+  , blackoutInfoCustomer    :: Maybe CustomerName
   , blackoutInfoStartTime   :: UTCTime -- defaults to now
   , blackoutInfoEndTime     :: UTCTime -- defaults to start + duration
   , blackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
@@ -338,7 +340,7 @@ data ExtendedBlackoutInfo = ExtendedBlackoutInfo {
   , extendedBlackoutInfoEvent       :: Maybe Event
   , extendedBlackoutInfoGroup       :: Maybe Group
   , extendedBlackoutInfoTags        :: Maybe [Tag]
-  , extendedBlackoutInfoCustomer    :: Maybe Customer
+  , extendedBlackoutInfoCustomer    :: Maybe CustomerName
   , extendedBlackoutInfoStartTime   :: UTCTime -- defaults to now
   , extendedBlackoutInfoEndTime     :: UTCTime -- defaults to start + duration
   , extendedBlackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
@@ -368,21 +370,21 @@ data BlackoutsResp = OkBlackoutsResp {
 --------------------------------------------------------------------------------
 
 data Heartbeat = Heartbeat {
-    heartbeatOrigin     :: Maybe Origin -- defaults to prog/nodename
+    heartbeatOrigin     :: Maybe Origin       -- defaults to prog/nodename
   , heartbeatTags       :: [Tag]
   , heartbeatCreateTime :: Maybe UTCTime
-  , heartbeatTimeout    :: Maybe Int    --seconds
-  , heartbeatCustomer   :: Maybe String -- if not admin, gets overwritten
+  , heartbeatTimeout    :: Maybe Int          -- seconds
+  , heartbeatCustomer   :: Maybe CustomerName -- if not admin, gets overwritten
   } deriving (Eq, Show, Generic, Default)
 
 data HeartbeatInfo = HeartbeatInfo {
     heartbeatInfoCreateTime  :: UTCTime
-  , heartbeatInfoCustomer    :: Maybe Customer
+  , heartbeatInfoCustomer    :: Maybe CustomerName
   , heartbeatInfoHref        :: Href
   , heartbeatInfoId          :: UUID
   , heartbeatInfoOrigin      :: Origin
   , heartbeatInfoReceiveTime :: UTCTime
-  , heartbeatInfoTags        :: [String]
+  , heartbeatInfoTags        :: [Tag]
   , heartbeatInfoTimeout     :: Int
   , heartbeatInfoType        :: String
   } deriving (Eq, Show, Generic)
@@ -439,7 +441,7 @@ instance ToHttpApiData ApiKey where
 
 data CreateApiKey = CreateApiKey {
     createApiKeyUser     :: Maybe Email       -- only read if authorised as admin, defaults to current user
-  , createApiKeyCustomer :: Maybe Customer   -- only read if authorised as admin, defaults to current customer
+  , createApiKeyCustomer :: Maybe CustomerName   -- only read if authorised as admin, defaults to current customer
   , createApiKeyType     :: Maybe ApiKeyType -- defaults to read-only
   , createApiKeyText     :: Maybe String     -- defaults to "API Key for $user"
   } deriving (Eq, Show, Generic, Default)
@@ -464,7 +466,7 @@ data ApiKeyInfo = ApiKeyInfo {
   , apiKeyInfoExpireTime   :: UTCTime
   , apiKeyInfoCount        :: Int -- number of times used
   , apiKeyInfoLastUsedTime :: Maybe UTCTime
-  , apiKeyInfoCustomer     :: Maybe Customer
+  , apiKeyInfoCustomer     :: Maybe CustomerName
   } deriving (Eq, Show, Generic)
 
 data CreateApiKeyResp = OkCreateApiKeyResp {
@@ -490,15 +492,15 @@ data ApiKeysResp = OkApiKeysResp {
 -- alerta doesn't require login, password but returns a 500 if they are missing
 -- yay, cowboy coding
 data User = User {
-    userName          :: String
+    userName          :: UserName
   , userLogin         :: Email
-  , userPassword      :: String
+  , userPassword      :: Password
   , userProvider      :: Maybe Provider
   , userText          :: Maybe String
   , userEmailVerified :: Maybe Bool
   } deriving (Show, Generic)
 
-user :: String -> Email -> String -> User
+user :: UserName -> Email -> Password -> User
 user name login password = User name login password Nothing Nothing Nothing
 
 -- bugs:
@@ -506,9 +508,9 @@ user name login password = User name login password Nothing Nothing Nothing
 --   as alerta checks the update message, not the user
 -- * can't set email_verified to false without providing another parameter
 data UserUpdate = UserUpdate {
-    userUpdateName          :: Maybe String
+    userUpdateName          :: Maybe UserName
   , userUpdateLogin         :: Maybe Email
-  , userUpdatePassword      :: Maybe String
+  , userUpdatePassword      :: Maybe Password
   , userUpdateProvider      :: Maybe Provider
   , userUpdateText          :: Maybe String
   , userUpdateEmail_verified :: Maybe Bool
@@ -517,9 +519,9 @@ data UserUpdate = UserUpdate {
 data IsEmpty = Empty | Nonempty | UnknownIfEmpty
 
 data UserAttr (u :: IsEmpty) = UserAttr {
-    userAttrName           :: Maybe String
+    userAttrName           :: Maybe UserName
   , userAttrLogin          :: Maybe Email
-  , userAttrPassword       :: Maybe String
+  , userAttrPassword       :: Maybe Password
   , userAttrProvider       :: Maybe Provider
   , userAttrText           :: Maybe String
   , userAttrEmail_verified :: Maybe Bool
@@ -559,9 +561,9 @@ instance FromJSON (UserAttr 'UnknownIfEmpty) where
       v .:? "email_verified"
   parseJSON _ = empty
 
-withUserName          :: UserAttr u -> String   -> UserAttr 'Nonempty
+withUserName          :: UserAttr u -> UserName -> UserAttr 'Nonempty
 withUserLogin         :: UserAttr u -> Email    -> UserAttr 'Nonempty
-withUserPassword      :: UserAttr u -> String   -> UserAttr 'Nonempty
+withUserPassword      :: UserAttr u -> Password -> UserAttr 'Nonempty
 withUserProvider      :: UserAttr u -> Provider -> UserAttr 'Nonempty
 withUserText          :: UserAttr u -> String   -> UserAttr 'Nonempty
 withUserEmailVerified :: UserAttr u -> Bool     -> UserAttr u
@@ -576,7 +578,7 @@ withUserEmailVerified u b = u { userAttrEmail_verified = Just b }
 data UserInfo = UserInfo {
     userInfoCreateTime     :: UTCTime
   , userInfoId             :: UUID
-  , userInfoName           :: String
+  , userInfoName           :: UserName
   , userInfoProvider       :: Provider
   , userInfoLogin          :: Email
   , userInfoText           :: String
@@ -589,7 +591,7 @@ data RoleType = UserRoleType | AdminRoleType
 data ExtendedUserInfo = ExtendedUserInfo {
     extendedUserInfoCreateTime     :: UTCTime
   , extendedUserInfoId             :: UUID
-  , extendedUserInfoName           :: String
+  , extendedUserInfoName           :: UserName
   , extendedUserInfoLogin          :: Email
   , extendedUserInfoProvider       :: Provider
   , extendedUserInfoRole           :: RoleType
