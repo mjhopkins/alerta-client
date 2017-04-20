@@ -619,6 +619,36 @@ data UsersResp = OkUsersResp {
     errorUsersResp :: String
   } deriving (Show, Generic)
 
+--------------------------------------------------------------------------------
+-- customers
+--------------------------------------------------------------------------------
+
+data Customer = Customer {
+    customerCustomer :: CustomerName
+  , customerMatch    :: String -- regex, apparently
+  } deriving (Show, Generic)
+
+data CustomerInfo = CustomerInfo {
+    customerInfoId       :: UUID
+  , customerInfoCustomer :: CustomerName
+  , customerInfoMatch    :: String -- regex, apparently
+  } deriving (Show, Generic)
+
+data CustomerResp = OkCustomerResp {
+    okCustomerRespId         :: UUID
+  , okCustomerRespCustomer   :: CustomerInfo
+  } | ErrorCustomerResp {
+    errorCustomerRespMessage :: String
+  } deriving (Show, Generic)
+
+data CustomersResp = OkCustomersResp {
+    okCustomersRespCustomers :: [CustomerInfo]
+  , okCustomersRespTotal     :: Int
+  , okCustomersRespMessage   :: Maybe String
+  , okCustomersRespTime      :: UTCTime
+  } | ErrorCustomersResp {
+    errorCustomersMessage    :: String
+  } deriving (Show, Generic)
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )
@@ -657,3 +687,7 @@ $( deriveJSON (toOpts 2 2 def)                    ''UserInfo             )
 $( deriveJSON (toOpts 3 3 def)                    ''ExtendedUserInfo     )
 $( deriveJSON (toOpts 3 2 def)                    ''UserResp             )
 $( deriveJSON (toOpts 3 2 def)                    ''UsersResp            )
+$( deriveJSON (toOpts 1 1 def)                    ''Customer             )
+$( deriveJSON (toOpts 2 2 def)                    ''CustomerInfo         )
+$( deriveJSON (toOpts 3 2 def)                    ''CustomerResp         )
+$( deriveJSON (toOpts 3 2 def)                    ''CustomersResp        )

@@ -63,6 +63,11 @@ type UserApi
  :<|> WithApiKey :> "user"  :> Capture "user" UUID      :> ReqBody '[JSON] (UserAttr 'Nonempty) :> Put '[JSON] Resp
  :<|> WithApiKey :> "users" :> QueryParam "name" String :> QueryParam "login" Email             :> Get '[JSON] UsersResp
 
+type CustomerApi
+ =     WithApiKey :> "customer"  :> ReqBody '[JSON] Customer :> Post '[JSON] CustomerResp
+ :<|>  WithApiKey :> "customer"  :> Capture "customer" UUID  :> Delete '[JSON] Resp
+ :<|>  WithApiKey :> "customers" :> Get '[JSON] CustomersResp
+
 createAlert            :<|> 
  getAlert              :<|> 
  deleteAlert           :<|> 
@@ -92,3 +97,7 @@ createUser  :<|>
  deleteUser :<|>
  updateUser :<|>
  listUsers = client (Proxy :: Proxy UserApi)
+
+createCustomer  :<|>
+ deleteCustomer :<|>
+ listCustomers = client (Proxy :: Proxy CustomerApi)
