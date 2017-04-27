@@ -50,6 +50,21 @@ type PageNo        = Int    -- actually a positive int
 type UUID          = String -- TODO actual UUID type?
 type Href          = String -- TODO use URL type for hrefs
 type QueryString   = String -- TODO should be JSON or an ADT representing a Mongo query
+type IsRepeat      = Bool
+-- ^ false if an alert is correlated (in which case alerta appends an item to
+-- the history), true for duplicate
+
+-- n.b. regexes are case-insensitive and are not anchored,
+-- i.e. no need to write .*regex.*
+type FieldQuery = (QueryAttr, MatchType, String, Bool)
+
+data MatchType = Regex | Literal deriving (Eq, Enum, Show, Read, Generic)
+
+(=.), (!=), (~.), (!~) :: QueryAttr -> String -> FieldQuery
+k =. v =  (k, Literal, v, True)
+k != v =  (k, Literal, v, False)
+k ~. v =  (k, Regex,   v, True)
+k !~ v =  (k, Regex,   v, False)
 
 data Severity =
     Unknown
@@ -240,7 +255,98 @@ data AlertAttr =
   | HrefAlertAttr
     deriving (Eq, Enum, Show, Generic)
 
+instance IsString AlertAttr where
+   fromString "id"                = IdAlertAttr
+   fromString "resource"          = ResourceAlertAttr
+   fromString "event"             = EventAlertAttr
+   fromString "environment"       = EnvironmentAlertAttr
+   fromString "severity"          = SeverityAlertAttr
+   fromString "correlate"         = CorrelateAlertAttr
+   fromString "status"            = StatusAlertAttr
+   fromString "service"           = ServiceAlertAttr
+   fromString "group"             = GroupAlertAttr
+   fromString "value"             = ValueAlertAttr
+   fromString "text"              = TextAlertAttr
+   fromString "tags"              = TagsAlertAttr
+   fromString "attributes"        = AttributesAlertAttr
+   fromString "origin"            = OriginAlertAttr
+   fromString "type"              = TypeAlertAttr
+   fromString "createTime"        = CreateTimeAlertAttr
+   fromString "timeout"           = TimeoutAlertAttr
+   fromString "rawData"           = RawDataAlertAttr
+   fromString "customer"          = CustomerAlertAttr
+   fromString "duplicateCount"    = DuplicateCountAlertAttr
+   fromString "repeat"            = RepeatAlertAttr
+   fromString "previousSeverity"  = PreviousSeverityAlertAttr
+   fromString "trendIndication"   = TrendIndicationAlertAttr
+   fromString "receiveTime"       = ReceiveTimeAlertAttr
+   fromString "lastReceiveId"     = LastReceiveIdAlertAttr
+   fromString "lastReceiveTime"   = LastReceiveTimeAlertAttr
+   fromString "history"           = HistoryAlertAttr
+   fromString "href"              = HrefAlertAttr
+   fromString other = error $ "\"" ++ other ++ "\" is not a valid AlertAttr"
+
 instance ToHttpApiData AlertAttr where
+  toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
+
+-- | No 'id', 'repeat' or 'duplicateCount' as these have special handling
+data QueryAttr =
+    EventQueryAttr
+  | EnvironmentQueryAttr
+  | SeverityQueryAttr
+  | CorrelateQueryAttr
+  | StatusQueryAttr
+  | ServiceQueryAttr
+  | GroupQueryAttr
+  | ValueQueryAttr
+  | TextQueryAttr
+  | TagsQueryAttr
+  | AttributesQueryAttr
+  | OriginQueryAttr
+  | TypeQueryAttr
+  | CreateTimeQueryAttr
+  | TimeoutQueryAttr
+  | RawDataQueryAttr
+  | CustomerQueryAttr
+  | RepeatQueryAttr
+  | PreviousSeverityQueryAttr
+  | TrendIndicationQueryAttr
+  | ReceiveTimeQueryAttr
+  | LastReceiveIdQueryAttr
+  | LastReceiveTimeQueryAttr
+  | HistoryQueryAttr
+  | HrefQueryAttr
+    deriving (Eq, Enum, Show, Generic)
+
+instance IsString QueryAttr where
+  fromString "event"            = EventQueryAttr
+  fromString "environment"      = EnvironmentQueryAttr
+  fromString "severity"         = SeverityQueryAttr
+  fromString "correlate"        = CorrelateQueryAttr
+  fromString "status"           = StatusQueryAttr
+  fromString "service"          = ServiceQueryAttr
+  fromString "group"            = GroupQueryAttr
+  fromString "value"            = ValueQueryAttr
+  fromString "text"             = TextQueryAttr
+  fromString "tags"             = TagsQueryAttr
+  fromString "attributes"       = AttributesQueryAttr
+  fromString "origin"           = OriginQueryAttr
+  fromString "type"             = TypeQueryAttr
+  fromString "createTime"       = CreateTimeQueryAttr
+  fromString "timeout"          = TimeoutQueryAttr
+  fromString "rawData"          = RawDataQueryAttr
+  fromString "customer"         = CustomerQueryAttr
+  fromString "repeat"           = RepeatQueryAttr
+  fromString "previousSeverity" = PreviousSeverityQueryAttr
+  fromString "trendIndication"  = TrendIndicationQueryAttr
+  fromString "receiveTime"      = ReceiveTimeQueryAttr
+  fromString "lastReceiveId"    = LastReceiveIdQueryAttr
+  fromString "lastReceiveTime"  = LastReceiveTimeQueryAttr
+  fromString "history"          = HistoryQueryAttr
+  fromString "href"             = HrefQueryAttr
+  fromString other = error $ "\"" ++ other ++ "\" is not a valid QueryAttr"
+
+instance ToHttpApiData QueryAttr where
   toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
 
 data HistoryItem = StatusHistoryItem {

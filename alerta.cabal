@@ -27,6 +27,7 @@ library
   exposed-modules:     Alerta
   other-modules:       Alerta.Auth
                      , Alerta.Helpers
+                     , Alerta.ServantExtras
                      , Alerta.Types
                      , Alerta.Util
   build-depends:       base >= 4.7 && < 5

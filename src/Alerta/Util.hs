@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Alerta.Util where
 
 import           Data.Aeson.TH
@@ -8,7 +5,6 @@ import           Data.Char
 import           Data.Default             
 import qualified Data.Text                as T
 import           Data.Text                (Text)
-import           Web.HttpApiData
 
 data AesonOpts = AesonOpts { tag :: String, unwrap :: Bool }
 
@@ -52,9 +48,3 @@ camelComponents = go [] ""
     go ws w (x:xs)                              = go ws (x:w) xs
     go ws w ""                                  = reverse (map reverse (w:ws))
 
-
--- | We need this because Alerta for some reason requires `field` and `field!`
--- parameters to be joined together with a comma rather than passed in the
--- standard manner.
-instance {-# OVERLAPPABLE #-} ToHttpApiData a => ToHttpApiData [a] where
-  toQueryParam  = T.intercalate "," . map toQueryParam

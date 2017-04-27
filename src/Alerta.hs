@@ -4,6 +4,7 @@
 module Alerta where
 
 import           Alerta.Auth
+import           Alerta.ServantExtras
 import           Alerta.Types
 import           Servant
 import           Servant.Client
@@ -47,6 +48,8 @@ type Fields a =
 type Query a =
      QueryParam "q" QueryString -- TODO JSON
   :> QueryParams "id" UUID
+  :> QueryFlag "repeat"
+  :> FieldQueries
   :> a
 
 --------------------------------------------------------------------------------
@@ -130,6 +133,8 @@ listAlerts ::
      Maybe ApiKey
   -> Maybe QueryString
   -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
   -> Maybe [AlertAttr]
   -> Maybe [AlertAttr]
   -> Maybe ShouldReverse
@@ -141,11 +146,13 @@ alertHistory ::
      Maybe ApiKey
   -> Maybe QueryString
   -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
   -> Maybe Limit
   -> ClientM AlertHistoryResp
-countAlerts   :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> ClientM AlertCountResp
-top10         :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> Maybe AlertAttr -> ClientM Top10Resp
-flappingTop10 :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> Maybe AlertAttr -> ClientM Top10Resp
+countAlerts   :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> IsRepeat -> [FieldQuery] ->  ClientM AlertCountResp
+top10         :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> IsRepeat -> [FieldQuery] -> Maybe AlertAttr -> ClientM Top10Resp
+flappingTop10 :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> IsRepeat -> [FieldQuery] -> Maybe AlertAttr -> ClientM Top10Resp
 
 listAlerts    :<|>
  alertHistory :<|>
@@ -158,6 +165,8 @@ listEnvironments ::
   Maybe ApiKey
   -> Maybe QueryString
   -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
   -> Maybe Limit
   -> ClientM EnvironmentsResp
 listEnvironments = client (Proxy :: Proxy EnvironmentApi)
@@ -166,6 +175,8 @@ listServices ::
      Maybe ApiKey
   -> Maybe QueryString
   -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
   -> Maybe Limit
   -> ClientM ServicesResp
 listServices = client (Proxy :: Proxy ServiceApi)
