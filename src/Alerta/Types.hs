@@ -31,22 +31,25 @@ import           GHC.Generics
 
 import           Web.HttpApiData
 
-type Resource     = String
-type Event        = String
-type Service      = String
-type Environment  = String
-type Group        = String
-type Origin       = String
-type AlertType    = String
-type UserName     = String
-type CustomerName = String
-type Tag          = String
-type Email        = String -- TODO actual email type
-type Password     = String
-type Provider     = String -- TODO make into data type
-type Limit        = Int    -- actually a positive int
-type UUID         = String -- TODO actual UUID type?
-type Href         = String -- TODO use URL type for hrefs
+type Resource      = String
+type Event         = String
+type Service       = String
+type Environment   = String
+type Group         = String
+type Origin        = String
+type AlertType     = String
+type UserName      = String
+type CustomerName  = String
+type Tag           = String
+type Email         = String -- TODO actual email type
+type Password      = String
+type Provider      = String -- TODO make into data type
+type ShouldReverse = Bool
+type Limit         = Int    -- actually a positive int
+type PageNo        = Int    -- actually a positive int
+type UUID          = String -- TODO actual UUID type?
+type Href          = String -- TODO use URL type for hrefs
+type QueryString   = String -- TODO should be JSON or an ADT representing a Mongo query
 
 data Severity =
     Unknown
@@ -174,37 +177,71 @@ mkAlert r e s = Alert {
   , alertRawData     = Nothing
   , alertCustomer    = Nothing
   }
-
+  
 data AlertInfo = AlertInfo {
     alertInfoId               :: UUID
   , alertInfoResource         :: Resource
   , alertInfoEvent            :: Event
-  , alertInfoEnvironment      :: Environment
-  , alertInfoSeverity         :: Severity
+  , alertInfoEnvironment      :: Environment -- defaults to empty string
+  , alertInfoSeverity         :: Maybe Severity
   , alertInfoCorrelate        :: [Event]
-  , alertInfoStatus           :: Status
+  , alertInfoStatus           :: Maybe Status
   , alertInfoService          :: [Service]
-  , alertInfoGroup            :: Group
-  , alertInfoValue            :: Value
-  , alertInfoText             :: String
+  , alertInfoGroup            :: Group  -- defaults to "misc"
+  , alertInfoValue            :: Value  -- defaults to "n/a"
+  , alertInfoText             :: String -- defaults to ""
   , alertInfoTags             :: [Tag]
   , alertInfoAttributes       :: Map String String -- Attribute keys must not contain "." or "$"
-  , alertInfoOrigin           :: Origin
-  , alertInfoType             :: AlertType
+  , alertInfoOrigin           :: Origin    -- defaults to prog/machine
+  , alertInfoType             :: AlertType -- defaults to "exceptionAlert"
   , alertInfoCreateTime       :: UTCTime
   , alertInfoTimeout          :: Int
-  , alertInfoRawData          :: String
+  , alertInfoRawData          :: Maybe String
   , alertInfoCustomer         :: Maybe CustomerName
-  , alertInfoDuplicateCount   :: Int
-  , alertInfoRepeat           :: Bool
-  , alertInfoPreviousSeverity :: Severity
-  , alertInfoTrendIndication  :: TrendIndication
+  , alertInfoDuplicateCount   :: Maybe Int
+  , alertInfoRepeat           :: Maybe Bool
+  , alertInfoPreviousSeverity :: Maybe Severity
+  , alertInfoTrendIndication  :: Maybe TrendIndication
   , alertInfoReceiveTime      :: UTCTime
-  , alertInfoLastReceiveId    :: UUID
+  , alertInfoLastReceiveId    :: Maybe UUID
   , alertInfoLastReceiveTime  :: UTCTime
   , alertInfoHistory          :: [HistoryItem]
   , alertInfoHref             :: Href
   } deriving (Eq, Show, Generic)
+
+data AlertAttr =
+    IdAlertAttr
+  | ResourceAlertAttr
+  | EventAlertAttr
+  | EnvironmentAlertAttr
+  | SeverityAlertAttr
+  | CorrelateAlertAttr
+  | StatusAlertAttr
+  | ServiceAlertAttr
+  | GroupAlertAttr
+  | ValueAlertAttr
+  | TextAlertAttr
+  | TagsAlertAttr
+  | AttributesAlertAttr
+  | OriginAlertAttr
+  | TypeAlertAttr
+  | CreateTimeAlertAttr
+  | TimeoutAlertAttr
+  | RawDataAlertAttr
+  | CustomerAlertAttr
+  | DuplicateCountAlertAttr
+  | RepeatAlertAttr
+  | PreviousSeverityAlertAttr
+  | TrendIndicationAlertAttr
+  | ReceiveTimeAlertAttr
+  | LastReceiveIdAlertAttr
+  | LastReceiveTimeAlertAttr
+  | HistoryAlertAttr
+  | HrefAlertAttr
+    deriving (Eq, Enum, Show, Generic)
+
+instance ToHttpApiData AlertAttr where
+  toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
 
 data HistoryItem = StatusHistoryItem {
     historyItemEvent      :: Event
@@ -219,6 +256,48 @@ data HistoryItem = StatusHistoryItem {
   , historyItemId         :: UUID
   , historyItemUpdateTime :: UTCTime
   , historyItemValue      :: Value
+  } deriving (Eq, Show, Generic)
+
+data ExtendedHistoryItem = StatusExtendedHistoryItem {
+    statusExtendedHistoryItemId          :: UUID
+  , statusExtendedHistoryItemResource    :: Resource
+  , statusExtendedHistoryItemEvent       :: Event
+  , statusExtendedHistoryItemEnvironment :: Environment
+  , statusExtendedHistoryItemStatus      :: Status
+  , statusExtendedHistoryItemService     :: [Service] -- why this is an array I don't know
+  , statusExtendedHistoryItemGroup       :: Group
+  , statusExtendedHistoryItemText        :: Text
+  , statusExtendedHistoryItemTags        :: [Tag]
+  , statusExtendedHistoryItemAttributes  :: Map String String
+  , statusExtendedHistoryItemOrigin      :: Origin
+  , statusExtendedHistoryItemUpdateTime  :: UTCTime
+  , statusExtendedHistoryItemCustomer    :: Maybe CustomerName
+  } | SeverityExtendedHistoryItem {
+    severityExtendedHistoryItemId          :: UUID
+  , severityExtendedHistoryItemResource    :: Resource
+  , severityExtendedHistoryItemEvent       :: Event
+  , severityExtendedHistoryItemEnvironment :: Environment
+  , severityExtendedHistoryItemSeverity    :: Severity
+  , severityExtendedHistoryItemService     :: [Service] -- why this is an array I don't know
+  , severityExtendedHistoryItemGroup       :: Group
+  , severityExtendedHistoryItemValue       :: Value
+  , severityExtendedHistoryItemText        :: Text
+  , severityExtendedHistoryItemTags        :: [Tag]
+  , severityExtendedHistoryItemAttributes  :: Map String String
+  , severityExtendedHistoryItemOrigin      :: Origin
+  , severityExtendedHistoryItemUpdateTime  :: UTCTime
+  , severityExtendedHistoryItemCustomer    :: Maybe CustomerName
+  } deriving (Eq, Show, Generic)
+
+newtype Tags = Tags { tags :: [Tag] } deriving (Eq, Show, Generic)
+
+newtype Attributes = Attributes { attributes :: Map String String } deriving (Eq, Show, Generic)
+
+data StatusChange = StatusChange {
+    statusChangeStatus :: Status -- docs say not "unknown" but the api allows it
+    -- (in fact any text is accepted - but our parsing code need to be able
+    -- to read it back from the alert history)
+  , statusChangeText   :: Maybe String
   } deriving (Eq, Show, Generic)
 
 data CreateAlertResp = OkCreateAlertResp {
@@ -236,13 +315,61 @@ data AlertResp = OkAlertResp {
     errorAlertRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-newtype Tags = Tags { tags :: [Tag] } deriving (Eq, Show, Generic)
+data AlertsResp = OkAlertsResp {
+    okAlertsRespAlerts           :: [AlertInfo]
+  , okAlertsRespTotal            :: Int
+  , okAlertsRespPage             :: PageNo
+  , okAlertsRespPageSize         :: Int
+  , okAlertsRespPages            :: Int
+  , okAlertsRespMore             :: Bool
+  , okAlertsRespSeverityCounts   :: Maybe (Map Severity Int)
+  , okAlertsRespStatusCounts     :: Maybe (Map Status Int)
+  , okAlertsRespLastTime         :: UTCTime
+  , okAlertsRespAutoRefresh      :: Bool
+  , okAlertsRespMessage          :: Maybe String
+  } | ErrorAlertsResp {
+    errorAlertsRespMessage       :: String
+  } deriving (Eq, Show, Generic)
 
-newtype Attributes = Attributes { attributes :: Map String String } deriving (Eq, Show, Generic)
+data AlertCountResp = OkAlertCountResp {
+    okAlertCountRespTotal          :: Int
+  , okAlertCountRespSeverityCounts :: Int
+  , okAlertCountRespStatusCounts   :: Int
+  , okAlertCountRespMessage        :: Maybe String
+  } | ErrorAlertCountResp {
+    errorAlertCountRespMessage     :: String
+  } deriving (Eq, Show, Generic)
 
-data StatusChange = StatusChange {
-    statusChangeStatus :: Status -- docs say not "unknown" but the api allows it (in fact any text is accepted)
-  , statusChangeText   :: Maybe String
+data ResourceInfo = ResourceInfo {
+    resourceInfoId       :: UUID
+  , resourceInfoResource :: Resource
+  , resourceInfoHref     :: Href
+  } deriving (Eq, Show, Generic)
+
+-- | This also has a field corresponding to the "group-by" query parameter used
+-- i.e. if you group by origin, then the result will have an "origin" field.
+data Top10Info = Top10Info {
+    top10InfoCount          :: Int
+  , top10InfoDuplicateCount :: Int
+  , top10InfoEnvironments   :: [Environment]
+  , top10InfoServices       :: [Service]
+  , top10InfoResources      :: [ResourceInfo]
+  } deriving (Eq, Show, Generic)
+
+data Top10Resp = OkTop10Resp {
+    okTop10RespTop10   :: [Top10Info]
+  , okTop10RespTotal   :: Int
+  , okTop10RespMessage :: Maybe String
+  } | ErrorTop10Resp {
+    errorTop10RespMessage :: String
+  } deriving (Eq, Show, Generic)
+
+data AlertHistoryResp = OkAlertHistoryResp {
+    okAlertHistoryRespHistory  :: [ExtendedHistoryItem]
+  , okAlertHistoryRespLastTime :: UTCTime
+  , okAlertHistoryRespMessage  :: Maybe String
+  } | ErrorAlertHistoryResp {
+    errorAlertHistoryResp      :: String
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -655,13 +782,21 @@ $( deriveJSON (toOpts 1 1 def)                    ''Status               )
 $( deriveJSON (toOpts 1 1 def)                    ''Alert                )
 $( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Tags                 )
 $( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Attributes           )
-$( deriveJSON (toOpts 3 2 def)                    ''AlertResp            )
-$( deriveJSON (toOpts 4 3 def)                    ''CreateAlertResp      )
+$( deriveJSON (toOpts 2 2 def)                    ''AlertAttr            )
 $( deriveJSON (toOpts 2 2 def)                    ''AlertInfo            )
+$( deriveJSON (toOpts 4 3 def)                    ''CreateAlertResp      )
+$( deriveJSON (toOpts 3 2 def)                    ''AlertResp            )
+$( deriveJSON (toOpts 3 2 def)                    ''AlertsResp           )
+$( deriveJSON (toOpts 2 2 def)                    ''ResourceInfo         )
+$( deriveJSON (toOpts 2 2 def)                    ''Top10Info            )
+$( deriveJSON (toOpts 3 2 def)                    ''Top10Resp            )
+$( deriveJSON (toOpts 4 3 def)                    ''AlertCountResp       )
+$( deriveJSON (toOpts 4 3 def)                    ''AlertHistoryResp     )
 $( deriveJSON (toOpts 2 2 def)                    ''StatusChange         )
 $( deriveJSON (toOpts 2 1 def)                    ''Resp                 )
 $( deriveJSON (toOpts 0 0 def)                    ''TrendIndication      )
 $( deriveJSON (toOpts 2 2 def { tag = "type" })   ''HistoryItem          )
+$( deriveJSON (toOpts 4 3 def { tag = "type" })   ''ExtendedHistoryItem  )
 $( deriveJSON (toOpts 2 2 def)                    ''EnvironmentInfo      )
 $( deriveJSON (toOpts 3 2 def)                    ''EnvironmentsResp     )
 $( deriveJSON (toOpts 2 2 def)                    ''ServiceInfo          )
