@@ -1,6 +1,9 @@
-{-# OPTIONS_GHC -fno-warn-unused-matches #-}
-
-module Alerta.Helpers where
+module Alerta.Helpers
+  ( run
+  , run'
+  , prettyPrintEncoding
+  , now
+  ) where
 
 import           Control.Monad            (void)
 
@@ -20,7 +23,6 @@ import           System.IO.Unsafe
 -- utilities for manual testing and interaction with api
 --------------------------------------------------------------------------------
 
-
 clientEnv :: Manager -> ClientEnv
 clientEnv m = ClientEnv m (BaseUrl Http "localhost" 8080 "")
 
@@ -34,8 +36,8 @@ run' :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO ()
 run' = void . run
 
 handleError :: (FromJSON a, ToJSON a) => ServantError -> IO a
-handleError (FailureResponse status ct b)  = either fail (\r -> putStrLn ("Failure response (status " ++ show status ++ ")") >> prettyPrint r >> return r) (eitherDecode b)
-handleError (DecodeFailure e ct b)         = fail ("decode failure\n\n" ++ e ++ "\n\n" ++ showUnescaped b)
+handleError (FailureResponse status _ b)   = either fail (\r -> putStrLn ("Failure response (status " ++ show status ++ ")") >> prettyPrint r >> return r) (eitherDecode b)
+handleError (DecodeFailure e _ b)          = fail ("decode failure\n\n" ++ e ++ "\n\n" ++ showUnescaped b)
 handleError (UnsupportedContentType ct b)  = fail ("unsupported content type\n\n" ++ show ct ++ "\n" ++ show b)
 handleError (InvalidContentTypeHeader h b) = fail ("unsupported content type type\n\n" ++ show h ++ "\n" ++ show b)
 handleError (ConnectionError e)            = fail ("connection error\n\n" ++ show e)
@@ -54,8 +56,8 @@ replace assocs s = T.unpack $ foldr replace' (T.pack s) assocs'
         replace' :: (Text, Text) -> Text -> Text
         replace' (a,b) = T.replace a b
 
-printEncoding :: ToJSON a => a -> IO ()
-printEncoding = putStrLn . showUnescaped . encodePretty
+prettyPrintEncoding :: ToJSON a => a -> IO ()
+prettyPrintEncoding = putStrLn . showUnescaped . encodePretty
 
 now :: () -> UTCTime
 now _ = unsafePerformIO getCurrentTime

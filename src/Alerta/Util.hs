@@ -1,4 +1,12 @@
-module Alerta.Util where
+module Alerta.Util
+  ( toOpts
+  , AesonOpts(..)
+  , showTextLowercase
+  , capitalise
+  , uncapitalise
+  , onCamelComponents
+  , dropRight
+  ) where
 
 import           Data.Aeson.TH
 import           Data.Char

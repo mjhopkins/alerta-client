@@ -6,9 +6,11 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 
-module Alerta.ServantExtras where
+module Alerta.ServantExtras
+  ( FieldQueries
+  ) where
 
-import           Alerta.Types
+import           Alerta.Types       (FieldQuery, MatchType(..))
 
 import           Data.List
 import           Data.Monoid        ((<>))

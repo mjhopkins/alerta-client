@@ -1,9 +1,61 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE TypeOperators  #-}
 
-module Alerta where
+module Alerta
+  (
+  -- * Types
+    Limited
+  , Page
+  , Sort
+  , Grouped
+  , Fields
+  , Query
+  , module Alerta.Types
+  , module Alerta.Helpers
+  -- * alerts
+  , createAlert
+  , getAlert
+  , deleteAlert
+  , setAlertStatus
+  , tagAlert
+  , untagAlert
+  , updateAlertAttributes
+  -- * alert history and queries
+  , listAlerts
+  , alertHistory
+  , countAlerts
+  , top10
+  , flappingTop10
+  -- * environments
+  , listEnvironments
+  -- * services
+  , listServices
+  -- * blackouts
+  , createBlackout
+  , deleteBlackout
+  , listBlackouts
+  -- * heartbeats
+  , createHeartbeat
+  , getHeartbeat
+  , deleteHeartbeat
+  , listHeartbeats
+  -- * API keys
+  , createApiKey
+  , deleteApiKey
+  , listApiKeys
+  -- * users
+  , createUser
+  , deleteUser
+  , updateUser
+  , listUsers
+  -- * customers
+  , createCustomer
+  , deleteCustomer
+  , listCustomers
+  ) where
 
 import           Alerta.Auth
+import           Alerta.Helpers
 import           Alerta.ServantExtras
 import           Alerta.Types
 import           Servant

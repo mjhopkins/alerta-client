@@ -7,7 +7,105 @@
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
 
-module Alerta.Types where
+module Alerta.Types
+  ( Resource
+  , Event
+  , Service
+  , Environment
+  , Group
+  , Origin
+  , AlertType
+  , UserName
+  , CustomerName
+  , Tag
+  , Email
+  , Password
+  , Provider
+  , ShouldReverse
+  , Limit
+  , PageNo
+  , UUID
+  , Href
+  , QueryString
+  , IsRepeat
+  , FieldQuery
+  , MatchType(..)
+  , (=.), (!=), (~.), (!~)
+  , Severity(..)
+  , Status(..)
+  , TrendIndication(..)
+  , Resp(..)
+  -- * alerts
+  , Alert(..)
+  , mkAlert
+  , AlertInfo(..)
+  , AlertAttr(..)
+  , QueryAttr(..)
+  , HistoryItem(..)
+  , ExtendedHistoryItem(..)
+  , Tags(..)
+  , Attributes(..)
+  , StatusChange(..)
+  , CreateAlertResp(..)
+  , AlertResp(..)
+  , AlertsResp(..)
+  , AlertCountResp(..)
+  , ResourceInfo(..)
+  , Top10Info(..)
+  , Top10Resp(..)
+  , AlertHistoryResp(..)
+  -- * environments
+  , EnvironmentInfo(..)
+  , EnvironmentsResp(..)
+  -- * services
+  , ServiceInfo(..)
+  , ServicesResp(..)
+  -- * blackouts
+  , Blackout(..)
+  , blackout
+  , BlackoutInfo(..)
+  , BlackoutStatus(..)
+  , ExtendedBlackoutInfo(..)
+  , BlackoutResp(..)
+  , BlackoutsResp(..)
+  -- * heartbeats
+  , Heartbeat(..)
+  , HeartbeatInfo(..)
+  , CreateHeartbeatResp(..)
+  , HeartbeatResp(..)
+  , HeartbeatsResp(..)
+  -- * API keys
+  , ApiKey(..)
+  , CreateApiKey(..)
+  , ApiKeyType(..)
+  , ApiKeyInfo(..)
+  , CreateApiKeyResp(..)
+  , ApiKeysResp(..)
+  -- * users
+  , User(..)
+  , user
+  , UserUpdate(..)
+  , UserAttr(..)
+  , IsEmpty(..)
+  , emptyUserAttr
+  , checkNonempty
+  , withUserName
+  , withUserLogin
+  , withUserPassword
+  , withUserProvider
+  , withUserText
+  , withUserEmailVerified
+  , UserInfo(..)
+  , RoleType(..)
+  , ExtendedUserInfo(..)
+  , UserResp(..)
+  , UsersResp(..)
+  -- * customers
+  , Customer(..)
+  , CustomerInfo(..)
+  , CustomerResp(..)
+  , CustomersResp(..)
+  ) where
 
 import           Alerta.Util
 
@@ -794,6 +892,7 @@ instance FromJSON (UserAttr 'UnknownIfEmpty) where
       v .:? "email_verified"
   parseJSON _ = empty
 
+-- TODO lenses
 withUserName          :: UserAttr u -> UserName -> UserAttr 'Nonempty
 withUserLogin         :: UserAttr u -> Email    -> UserAttr 'Nonempty
 withUserPassword      :: UserAttr u -> Password -> UserAttr 'Nonempty

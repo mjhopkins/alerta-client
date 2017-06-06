@@ -6,9 +6,12 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Alerta.Auth where
+module Alerta.Auth
+  ( WithApiKey
+  , NeedApiKey
+  ) where
 
-import           Alerta.Types
+import           Alerta.Types       (ApiKey(..))
 
 import           Data.Typeable      (Typeable)
 import           Data.Monoid        ((<>))
