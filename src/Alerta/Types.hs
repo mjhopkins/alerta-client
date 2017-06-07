@@ -154,7 +154,7 @@ type IsRepeat      = Bool
 
 -- n.b. regexes are case-insensitive and are not anchored,
 -- i.e. no need to write .*regex.*
-type FieldQuery = (QueryAttr, MatchType, String, Bool)
+type FieldQuery = (QueryAttr, String, MatchType, Bool)
 
 data MatchType = Regex | Literal deriving (Eq, Enum, Show, Read, Generic)
 

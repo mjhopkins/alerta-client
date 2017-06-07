@@ -37,9 +37,9 @@ instance HasClient api => HasClient (FieldQueries :> api) where
     clientWithRoute (Proxy :: Proxy api) $ foldl' (flip f) req fqs where
 
       f :: FieldQuery -> Req -> Req
-      f (a,t,s,b) = appendToQueryString k (Just v) where
-        k = toUrlPiece a <> suffix
-        v = prefix <> T.pack s
+      f (attr, str, t, b) = appendToQueryString k (Just v) where
+        k = toUrlPiece attr <> suffix
+        v = prefix <> T.pack str
         suffix = if b then "" else "!"
         prefix = case t of
           Regex   -> "~"
