@@ -7,8 +7,22 @@
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
 
+--------------------------------------------------------------------------------
+-- |
+-- Module: Alerta.Types
+--
+-- Types used by the alerta bindings.
+-- This includes request and return parameter types, as well as type synonyms used
+-- to help document the bindings.
+--
+-- A record whose name ends in \"Resp\" indicates a response from the server.
+-- A record whose name ends in \"Info\" indicates data contained within
+-- responses from the server.
+--------------------------------------------------------------------------------
 module Alerta.Types
-  ( Resource
+  (
+  -- ** General domain terms
+    Resource
   , Event
   , Service
   , Environment
@@ -21,21 +35,24 @@ module Alerta.Types
   , Email
   , Password
   , Provider
+  , UUID
+  , Href
+  -- ** Query and sorting options
   , ShouldReverse
   , Limit
   , PageNo
-  , UUID
-  , Href
   , QueryString
   , IsRepeat
+  -- ** Field queries
   , FieldQuery
   , MatchType(..)
   , (=.), (!=), (~.), (!~)
+  -- ** Generic response
+  , Resp(..)
+  -- ** Alerts
   , Severity(..)
   , Status(..)
   , TrendIndication(..)
-  , Resp(..)
-  -- * alerts
   , Alert(..)
   , mkAlert
   , AlertInfo(..)
@@ -54,13 +71,13 @@ module Alerta.Types
   , Top10Info(..)
   , Top10Resp(..)
   , AlertHistoryResp(..)
-  -- * environments
+  -- ** Environments
   , EnvironmentInfo(..)
   , EnvironmentsResp(..)
-  -- * services
+  -- ** Services
   , ServiceInfo(..)
   , ServicesResp(..)
-  -- * blackouts
+  -- ** Blackouts
   , Blackout(..)
   , blackout
   , BlackoutInfo(..)
@@ -68,23 +85,22 @@ module Alerta.Types
   , ExtendedBlackoutInfo(..)
   , BlackoutResp(..)
   , BlackoutsResp(..)
-  -- * heartbeats
+  -- ** Heartbeats
   , Heartbeat(..)
   , HeartbeatInfo(..)
   , CreateHeartbeatResp(..)
   , HeartbeatResp(..)
   , HeartbeatsResp(..)
-  -- * API keys
+  -- ** API keys
   , ApiKey(..)
   , CreateApiKey(..)
   , ApiKeyType(..)
   , ApiKeyInfo(..)
   , CreateApiKeyResp(..)
   , ApiKeysResp(..)
-  -- * users
+  -- ** Users
   , User(..)
   , user
-  , UserUpdate(..)
   , UserAttr(..)
   , IsEmpty(..)
   , emptyUserAttr
@@ -100,7 +116,7 @@ module Alerta.Types
   , ExtendedUserInfo(..)
   , UserResp(..)
   , UsersResp(..)
-  -- * customers
+  -- ** Customers
   , Customer(..)
   , CustomerInfo(..)
   , CustomerResp(..)
@@ -142,42 +158,114 @@ type Tag           = String
 type Email         = String -- TODO actual email type
 type Password      = String
 type Provider      = String -- TODO make into data type
-type ShouldReverse = Bool
-type Limit         = Int    -- actually a positive int
-type PageNo        = Int    -- actually a positive int
+type ShouldReverse = Bool   -- ^ whether to reverse the order of a sort
+type Limit         = Int    -- ^ maximum number of results to return (actually a positive int)
+type PageNo        = Int    -- ^ what page of the results to return (actually a positive int)
 type UUID          = String -- TODO actual UUID type?
 type Href          = String -- TODO use URL type for hrefs
+-- | This is a JSON document describing a Mongo query,
+-- see http://docs.mongodb.org/manual/reference/operator/query/
 type QueryString   = String -- TODO should be JSON or an ADT representing a Mongo query
 type IsRepeat      = Bool
--- ^ false if an alert is correlated (in which case alerta appends an item to
--- the history), true for duplicate
+-- ^ true for duplicate, false if an alert is correlated (in which case alerta appends an item to
+-- the history)
 
--- n.b. regexes are case-insensitive and are not anchored,
--- i.e. no need to write .*regex.*
+--------------------------------------------------------------------------------
+-- Field queries
+--------------------------------------------------------------------------------
+
 type FieldQuery = (QueryAttr, String, MatchType, Bool)
 
+-- | Matches can be either literal or regular expressions.
+-- n.b. regexes are case-insensitive and are not anchored,
+-- i.e. no need to write .*regex.*
 data MatchType = Regex | Literal deriving (Eq, Enum, Show, Read, Generic)
 
+-- | Convenient syntax for the four types of field queries
+-- viz. literal, negated literal, regex, negated regex.
 (=.), (!=), (~.), (!~) :: QueryAttr -> String -> FieldQuery
-k =. v =  (k, Literal, v, True)
-k != v =  (k, Literal, v, False)
-k ~. v =  (k, Regex,   v, True)
-k !~ v =  (k, Regex,   v, False)
+k =. v =  (k, v, Literal, True)
+k != v =  (k, v, Literal, False)
+k ~. v =  (k, v, Regex,   True)
+k !~ v =  (k, v, Regex,   False)
 
+-- | These are the valid keys for use in field queries.
+-- 
+-- NB no 'id', 'repeat' or 'duplicateCount' as these have special handling.
+data QueryAttr =
+    EventQueryAttr
+  | EnvironmentQueryAttr
+  | SeverityQueryAttr
+  | CorrelateQueryAttr
+  | StatusQueryAttr
+  | ServiceQueryAttr
+  | GroupQueryAttr
+  | ValueQueryAttr
+  | TextQueryAttr
+  | TagsQueryAttr
+  | AttributesQueryAttr
+  | OriginQueryAttr
+  | TypeQueryAttr
+  | CreateTimeQueryAttr
+  | TimeoutQueryAttr
+  | RawDataQueryAttr
+  | CustomerQueryAttr
+  | RepeatQueryAttr
+  | PreviousSeverityQueryAttr
+  | TrendIndicationQueryAttr
+  | ReceiveTimeQueryAttr
+  | LastReceiveIdQueryAttr
+  | LastReceiveTimeQueryAttr
+  | HistoryQueryAttr
+  | HrefQueryAttr
+    deriving (Eq, Enum, Show, Generic)
+
+instance IsString QueryAttr where
+  fromString "event"            = EventQueryAttr
+  fromString "environment"      = EnvironmentQueryAttr
+  fromString "severity"         = SeverityQueryAttr
+  fromString "correlate"        = CorrelateQueryAttr
+  fromString "status"           = StatusQueryAttr
+  fromString "service"          = ServiceQueryAttr
+  fromString "group"            = GroupQueryAttr
+  fromString "value"            = ValueQueryAttr
+  fromString "text"             = TextQueryAttr
+  fromString "tags"             = TagsQueryAttr
+  fromString "attributes"       = AttributesQueryAttr
+  fromString "origin"           = OriginQueryAttr
+  fromString "type"             = TypeQueryAttr
+  fromString "createTime"       = CreateTimeQueryAttr
+  fromString "timeout"          = TimeoutQueryAttr
+  fromString "rawData"          = RawDataQueryAttr
+  fromString "customer"         = CustomerQueryAttr
+  fromString "repeat"           = RepeatQueryAttr
+  fromString "previousSeverity" = PreviousSeverityQueryAttr
+  fromString "trendIndication"  = TrendIndicationQueryAttr
+  fromString "receiveTime"      = ReceiveTimeQueryAttr
+  fromString "lastReceiveId"    = LastReceiveIdQueryAttr
+  fromString "lastReceiveTime"  = LastReceiveTimeQueryAttr
+  fromString "history"          = HistoryQueryAttr
+  fromString "href"             = HrefQueryAttr
+  fromString other = error $ "\"" ++ other ++ "\" is not a valid QueryAttr"
+
+instance ToHttpApiData QueryAttr where
+  toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
+
+-- | Alert severity
 data Severity =
     Unknown
-  | Trace         -- 8     Grey
-  | Debug         -- 7     Purple
-  | Informational -- 6     Green
-  | Ok            -- 5     Green
-  | Normal        -- 5     Green
-  | Cleared       -- 5     Green
-  | Indeterminate -- 5     Silver
-  | Warning       -- 4     Blue
-  | Minor         -- 3     Yellow
-  | Major         -- 2     Orange
-  | Critical      -- 1     Red
-  | Security      -- 0     Black
+  | Trace         -- ^ 8 (grey)
+  | Debug         -- ^ 7 (purple)
+  | Informational -- ^ 6 (green)
+  | Ok            -- ^ 5 (green)
+  | Normal        -- ^ 5 (green)
+  | Cleared       -- ^ 5 (green)
+  | Indeterminate -- ^ 5 (silver)
+  | Warning       -- ^ 4 (blue)
+  | Minor         -- ^ 3 (yellow)
+  | Major         -- ^ 2 (orange)
+  | Critical      -- ^ 1 (red)
+  | Security      -- ^ 0 (black)
   deriving (Eq, Ord, Bounded, Enum, Ix, Show, Read, Generic)
 
 instance ToHttpApiData Severity where
@@ -203,13 +291,14 @@ instance FromJSONKey Severity where
     "unknown"       -> pure Unknown
     other           -> fail $ "Could not parse key \"" ++ T.unpack other ++ "\" as Severity"
 
+-- | Status of an alert.
 data Status =     --  Status Code
-    OpenStatus    --  1
-  | AssignStatus  --  2
-  | AckStatus     --  3
-  | ClosedStatus  --  4
-  | ExpiredStatus --  5
-  | UnknownStatus --  9
+    OpenStatus    -- ^ status code 1
+  | AssignStatus  -- ^ status code 2
+  | AckStatus     -- ^ status code 3
+  | ClosedStatus  -- ^ status code 4
+  | ExpiredStatus -- ^ status code 5
+  | UnknownStatus -- ^ status code 9
   deriving (Eq, Ord, Bounded, Enum, Ix, Show, Read, Generic)
 
 instance ToHttpApiData Status where
@@ -235,16 +324,19 @@ instance FromHttpApiData TrendIndication where
   parseQueryParam = parseBoundedTextData
 
 --------------------------------------------------------------------------------
--- basic response
+-- Basic response
 --------------------------------------------------------------------------------
 
+-- | This type is used for basic responses that have no content beyond whether they succeeded or
+-- failed with an error message.
 data Resp = OkResp | ErrorResp { respMessage :: String }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- alerts
+-- Alerts
 --------------------------------------------------------------------------------
 
+-- | Data required to create (post) an alert.
 data Alert = Alert {
     alertResource    :: Resource
   , alertEvent       :: Event
@@ -253,31 +345,33 @@ data Alert = Alert {
   , alertCorrelate   :: Maybe [Event]
   , alertStatus      :: Maybe Status
   , alertService     :: Maybe [Service]
-  , alertGroup       :: Maybe Group     -- defaults to "Misc"
-  , alertValue       :: Maybe Value     -- defaults to "n/a"
+  , alertGroup       :: Maybe Group     -- ^ defaults to @Misc@
+  , alertValue       :: Maybe Value     -- ^ defaults to @n/a@
   , alertText        :: Maybe String
   , alertTags        :: Maybe [Tag]
   , alertAttributes  :: Maybe (Map String String)
   -- Attribute keys must not contain "." or "$"
   -- note that key "ip" will be overwritten
-  , alertOrigin      :: Maybe Origin    -- defaults to prog/machine ('%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1]))
-  , alertType        :: Maybe AlertType -- defaults to "exceptionAlert"
-  , alertCreateTime  :: Maybe UTCTime   -- defaults to utcnow()
-  , alertTimeout     :: Maybe Int       -- in seconds, defaults to 86400 (24 hours)
+  , alertOrigin      :: Maybe Origin    -- ^ defaults to prog\/machine ('%s\/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1]))
+  , alertType        :: Maybe AlertType -- ^ defaults to @exceptionAlert@
+  , alertCreateTime  :: Maybe UTCTime   -- ^ defaults to @utcnow()@
+  , alertTimeout     :: Maybe Int       -- ^ in seconds; defaults to 86400 (24 hours)
   , alertRawData     :: Maybe String
   , alertCustomer    :: Maybe CustomerName
   } deriving (Eq, Show, Generic)
 
--- | helper for testing
+-- | Create an alert with just the mandatory fields.
 mkAlert :: Resource -> Event -> Service -> Alert
 mkAlert r e s = Alert {
     alertResource    = r
   , alertEvent       = e
-  , alertEnvironment = Just "Development" -- supposed to be optional, but RejectPolicy plugin requires it to be one of ALLOWED_ENVIRONMENTS
+  -- supposed to be optional, but RejectPolicy plugin requires it to be one of ALLOWED_ENVIRONMENTS
+  , alertEnvironment = Just "Development"
   , alertSeverity    = Nothing
   , alertCorrelate   = Nothing
   , alertStatus      = Nothing
-  , alertService     = Just [s] -- supposed to be optional, but RejectPolicy requires it to be set
+  -- supposed to be optional, but RejectPolicy requires it to be set
+  , alertService     = Just [s]
   , alertGroup       = Nothing
   , alertValue       = Nothing
   , alertText        = Nothing
@@ -290,23 +384,24 @@ mkAlert r e s = Alert {
   , alertRawData     = Nothing
   , alertCustomer    = Nothing
   }
-  
+
+-- | Data returned from the server about an alert
 data AlertInfo = AlertInfo {
     alertInfoId               :: UUID
   , alertInfoResource         :: Resource
   , alertInfoEvent            :: Event
-  , alertInfoEnvironment      :: Environment -- defaults to empty string
+  , alertInfoEnvironment      :: Environment -- ^ defaults to empty string
   , alertInfoSeverity         :: Maybe Severity
   , alertInfoCorrelate        :: [Event]
   , alertInfoStatus           :: Maybe Status
   , alertInfoService          :: [Service]
-  , alertInfoGroup            :: Group  -- defaults to "misc"
-  , alertInfoValue            :: Value  -- defaults to "n/a"
-  , alertInfoText             :: String -- defaults to ""
+  , alertInfoGroup            :: Group  -- ^ defaults to @misc@
+  , alertInfoValue            :: Value  -- ^ defaults to @n/a@
+  , alertInfoText             :: String -- ^ defaults to empty string
   , alertInfoTags             :: [Tag]
-  , alertInfoAttributes       :: Map String String -- Attribute keys must not contain "." or "$"
-  , alertInfoOrigin           :: Origin    -- defaults to prog/machine
-  , alertInfoType             :: AlertType -- defaults to "exceptionAlert"
+  , alertInfoAttributes       :: Map String String -- ^ Attribute keys must not contain "." or "$"
+  , alertInfoOrigin           :: Origin            -- ^ defaults to prog\/machine
+  , alertInfoType             :: AlertType         -- ^ defaults to @exceptionAlert@
   , alertInfoCreateTime       :: UTCTime
   , alertInfoTimeout          :: Int
   , alertInfoRawData          :: Maybe String
@@ -322,6 +417,7 @@ data AlertInfo = AlertInfo {
   , alertInfoHref             :: Href
   } deriving (Eq, Show, Generic)
 
+-- | Alert attributes, used for sorting, grouping and for field-based queries
 data AlertAttr =
     IdAlertAttr
   | ResourceAlertAttr
@@ -387,66 +483,6 @@ instance IsString AlertAttr where
 instance ToHttpApiData AlertAttr where
   toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
 
--- | No 'id', 'repeat' or 'duplicateCount' as these have special handling
-data QueryAttr =
-    EventQueryAttr
-  | EnvironmentQueryAttr
-  | SeverityQueryAttr
-  | CorrelateQueryAttr
-  | StatusQueryAttr
-  | ServiceQueryAttr
-  | GroupQueryAttr
-  | ValueQueryAttr
-  | TextQueryAttr
-  | TagsQueryAttr
-  | AttributesQueryAttr
-  | OriginQueryAttr
-  | TypeQueryAttr
-  | CreateTimeQueryAttr
-  | TimeoutQueryAttr
-  | RawDataQueryAttr
-  | CustomerQueryAttr
-  | RepeatQueryAttr
-  | PreviousSeverityQueryAttr
-  | TrendIndicationQueryAttr
-  | ReceiveTimeQueryAttr
-  | LastReceiveIdQueryAttr
-  | LastReceiveTimeQueryAttr
-  | HistoryQueryAttr
-  | HrefQueryAttr
-    deriving (Eq, Enum, Show, Generic)
-
-instance IsString QueryAttr where
-  fromString "event"            = EventQueryAttr
-  fromString "environment"      = EnvironmentQueryAttr
-  fromString "severity"         = SeverityQueryAttr
-  fromString "correlate"        = CorrelateQueryAttr
-  fromString "status"           = StatusQueryAttr
-  fromString "service"          = ServiceQueryAttr
-  fromString "group"            = GroupQueryAttr
-  fromString "value"            = ValueQueryAttr
-  fromString "text"             = TextQueryAttr
-  fromString "tags"             = TagsQueryAttr
-  fromString "attributes"       = AttributesQueryAttr
-  fromString "origin"           = OriginQueryAttr
-  fromString "type"             = TypeQueryAttr
-  fromString "createTime"       = CreateTimeQueryAttr
-  fromString "timeout"          = TimeoutQueryAttr
-  fromString "rawData"          = RawDataQueryAttr
-  fromString "customer"         = CustomerQueryAttr
-  fromString "repeat"           = RepeatQueryAttr
-  fromString "previousSeverity" = PreviousSeverityQueryAttr
-  fromString "trendIndication"  = TrendIndicationQueryAttr
-  fromString "receiveTime"      = ReceiveTimeQueryAttr
-  fromString "lastReceiveId"    = LastReceiveIdQueryAttr
-  fromString "lastReceiveTime"  = LastReceiveTimeQueryAttr
-  fromString "history"          = HistoryQueryAttr
-  fromString "href"             = HrefQueryAttr
-  fromString other = error $ "\"" ++ other ++ "\" is not a valid QueryAttr"
-
-instance ToHttpApiData QueryAttr where
-  toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
-
 data HistoryItem = StatusHistoryItem {
     historyItemEvent      :: Event
   , historyItemStatus     :: Status
@@ -462,13 +498,14 @@ data HistoryItem = StatusHistoryItem {
   , historyItemValue      :: Value
   } deriving (Eq, Show, Generic)
 
+-- | When performing an alert history query an enriched version of the alert history is returned with extra fields.
 data ExtendedHistoryItem = StatusExtendedHistoryItem {
     statusExtendedHistoryItemId          :: UUID
   , statusExtendedHistoryItemResource    :: Resource
   , statusExtendedHistoryItemEvent       :: Event
   , statusExtendedHistoryItemEnvironment :: Environment
   , statusExtendedHistoryItemStatus      :: Status
-  , statusExtendedHistoryItemService     :: [Service] -- why this is an array I don't know
+  , statusExtendedHistoryItemService     :: [Service] -- ^ why this is an array I do not know
   , statusExtendedHistoryItemGroup       :: Group
   , statusExtendedHistoryItemText        :: Text
   , statusExtendedHistoryItemTags        :: [Tag]
@@ -482,7 +519,7 @@ data ExtendedHistoryItem = StatusExtendedHistoryItem {
   , severityExtendedHistoryItemEvent       :: Event
   , severityExtendedHistoryItemEnvironment :: Environment
   , severityExtendedHistoryItemSeverity    :: Severity
-  , severityExtendedHistoryItemService     :: [Service] -- why this is an array I don't know
+  , severityExtendedHistoryItemService     :: [Service] -- ^ why this is an array I do not know
   , severityExtendedHistoryItemGroup       :: Group
   , severityExtendedHistoryItemValue       :: Value
   , severityExtendedHistoryItemText        :: Text
@@ -495,6 +532,7 @@ data ExtendedHistoryItem = StatusExtendedHistoryItem {
 
 newtype Tags = Tags { tags :: [Tag] } deriving (Eq, Show, Generic)
 
+-- | Attributes are key-value pairs that can be attached to an alert.
 newtype Attributes = Attributes { attributes :: Map String String } deriving (Eq, Show, Generic)
 
 data StatusChange = StatusChange {
@@ -506,8 +544,8 @@ data StatusChange = StatusChange {
 
 data CreateAlertResp = OkCreateAlertResp {
     okCreateAlertRespId         :: UUID
-  , okCreateAlertRespAlert      :: Maybe AlertInfo -- not present if rate limited or in blackout
-  , okCreateAlertRespMessage    :: Maybe Text      -- present when rate limited or in blackout
+  , okCreateAlertRespAlert      :: Maybe AlertInfo -- ^ not present if rate limited or in blackout
+  , okCreateAlertRespMessage    :: Maybe Text      -- ^ present when rate limited or in blackout
   } | ErrorCreateAlertResp {
     errorCreateAlertRespMessage :: Text
   } deriving (Eq, Show, Generic)
@@ -552,6 +590,8 @@ data ResourceInfo = ResourceInfo {
 
 -- | This also has a field corresponding to the "group-by" query parameter used
 -- i.e. if you group by origin, then the result will have an "origin" field.
+--
+-- This dependently-typed feature is not currently captured in the Haskell types.
 data Top10Info = Top10Info {
     top10InfoCount          :: Int
   , top10InfoDuplicateCount :: Int
@@ -577,7 +617,7 @@ data AlertHistoryResp = OkAlertHistoryResp {
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- environments
+-- Environments
 --------------------------------------------------------------------------------
 
 data EnvironmentInfo = EnvironmentInfo {
@@ -594,7 +634,7 @@ data EnvironmentsResp = OkEnvironmentsResp {
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- services
+-- Services
 --------------------------------------------------------------------------------
 
 data ServiceInfo = ServiceInfo {
@@ -612,7 +652,7 @@ data ServicesResp = OkServicesResp {
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- blackouts
+-- Blackouts
 --------------------------------------------------------------------------------
 
 data Blackout = Blackout {
@@ -622,32 +662,43 @@ data Blackout = Blackout {
   , blackoutEvent       :: Maybe Event
   , blackoutGroup       :: Maybe Group
   , blackoutTags        :: Maybe [Tag]
-  , blackoutStartTime   :: Maybe UTCTime -- defaults to now
-  , blackoutEndTime     :: Maybe UTCTime -- defaults to start + duration
-  , blackoutDuration    :: Maybe Int     -- in seconds; can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+  , blackoutStartTime   :: Maybe UTCTime -- ^ defaults to now
+  , blackoutEndTime     :: Maybe UTCTime -- ^ defaults to start + duration
+  , blackoutDuration    :: Maybe Int     -- ^ in seconds; can be calculated from start and end, or else defaults to BLACKOUT_DURATION
   } deriving (Eq, Show, Generic)
 
--- | helper for testing
+-- | Create a blackout with only the mandatory fields
 blackout :: Environment -> Blackout
 blackout env = Blackout env Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
+-- | A note on blackout priorities:
+--
+-- Priority is
+--
+--   1. by default
+--
+--   2. if resource and not event present
+--
+--   3. if service present
+--
+--   4. if event and not resource
+--
+--   5. if group present
+--
+--   6. if resource and event present
+--    
+--   7. if tags present
+--
+-- Somewhat bizarrely, the saved blackout only includes an attribute
+--
+--   {resource,service,event,group,tags}
+--
+-- if it was used to deduce the priority,
+-- i.e. a priority 6 blackout will have resource and event attributes,
+-- but no tags attribute, even if it was supplied when it was created.
 data BlackoutInfo = BlackoutInfo {
     blackoutInfoId          :: UUID
   , blackoutInfoPriority    :: Int
-  {-
-  priority is 1 by default
-              2 if resource and not event present
-              3 if service
-              4 if event and not resource
-              5 if group
-              6 if resource and event
-              7 if tags
-  Somewhat bizarrely, the saved blackout only includes an attribute
-  {resource,service,event,group,tags}
-  if it was used to deduce the priority,
-  i.e. a priority 6 blackout will have resource and event attributes,
-  but no tags attribute, even if it was supplied when it was created.
-  -}
   , blackoutInfoEnvironment :: Environment
   , blackoutInfoResource    :: Maybe Resource
   , blackoutInfoService     :: Maybe [Service]
@@ -655,9 +706,9 @@ data BlackoutInfo = BlackoutInfo {
   , blackoutInfoGroup       :: Maybe Group
   , blackoutInfoTags        :: Maybe [Tag]
   , blackoutInfoCustomer    :: Maybe CustomerName
-  , blackoutInfoStartTime   :: UTCTime -- defaults to now
-  , blackoutInfoEndTime     :: UTCTime -- defaults to start + duration
-  , blackoutInfoDuration    :: Int     -- can be calculated from start and end, or else defaults to BLACKOUT_DURATION
+  , blackoutInfoStartTime   :: UTCTime -- ^ defaults to now
+  , blackoutInfoEndTime     :: UTCTime -- ^ defaults to start + duration
+  , blackoutInfoDuration    :: Int     -- ^ can be calculated from start and end, or else defaults to BLACKOUT_DURATION
   } deriving (Eq, Show, Generic)
 
 data BlackoutStatus = Expired | Pending | Active deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
@@ -697,9 +748,10 @@ data BlackoutsResp = OkBlackoutsResp {
 
 
 --------------------------------------------------------------------------------
--- heartbeats
+-- Heartbeats
 --------------------------------------------------------------------------------
 
+-- | Data needed to create a heartbeat
 data Heartbeat = Heartbeat {
     heartbeatOrigin     :: Maybe Origin       -- defaults to prog/nodename
   , heartbeatTags       :: [Tag]
@@ -708,6 +760,7 @@ data Heartbeat = Heartbeat {
   , heartbeatCustomer   :: Maybe CustomerName -- if not admin, gets overwritten
   } deriving (Eq, Show, Generic, Default)
 
+-- | Information returned from the server about a heartbeat
 data HeartbeatInfo = HeartbeatInfo {
     heartbeatInfoCreateTime  :: UTCTime
   , heartbeatInfoCustomer    :: Maybe CustomerName
@@ -739,7 +792,7 @@ data HeartbeatsResp = OkHeartbeatsResp {
   , heartbeatsRespTime         :: Maybe UTCTime
   , heartbeatsRespTotal        :: Int
   , heartbeatsRespMessage      :: Maybe String
-  }| ErrorHeartbeatsResp {
+  } | ErrorHeartbeatsResp {
     heartbeatsRespErrorMessage :: String
   } deriving (Eq, Show, Generic)
 
@@ -751,6 +804,8 @@ data HeartbeatsResp = OkHeartbeatsResp {
 -- when using admin credentials, user must be present, or associated with account
 
 -- | 40-char UTF8
+
+-- TODO smart constructor
 data ApiKey = ApiKey { unApiKey :: !Text }
   deriving (Eq, Show, Generic)
 
@@ -770,11 +825,12 @@ instance ToJSON ApiKey where
 instance ToHttpApiData ApiKey where
   toUrlPiece (ApiKey k) = k
 
+-- | Data needed to create an API key
 data CreateApiKey = CreateApiKey {
-    createApiKeyUser     :: Maybe Email       -- only read if authorised as admin, defaults to current user
-  , createApiKeyCustomer :: Maybe CustomerName   -- only read if authorised as admin, defaults to current customer
-  , createApiKeyType     :: Maybe ApiKeyType -- defaults to read-only
-  , createApiKeyText     :: Maybe String     -- defaults to "API Key for $user"
+    createApiKeyUser     :: Maybe Email         -- ^ only read if authorised as admin, defaults to current user
+  , createApiKeyCustomer :: Maybe CustomerName  -- ^ only read if authorised as admin, defaults to current customer
+  , createApiKeyType     :: Maybe ApiKeyType    -- ^ defaults to read-only
+  , createApiKeyText     :: Maybe String        -- ^ defaults to "API Key for $user"
   } deriving (Eq, Show, Generic, Default)
 
 data ApiKeyType = ReadOnly | ReadWrite deriving (Eq, Ord, Bounded, Enum, Ix, Generic)
@@ -789,6 +845,7 @@ instance ToJSON ApiKeyType where
 instance FromJSON ApiKeyType where
   parseJSON = genericParseJSON $ defaultOptions { constructorTagModifier = camelTo2 '-'}
 
+-- | Information returned from the server about an API key
 data ApiKeyInfo = ApiKeyInfo {
     apiKeyInfoUser         :: Email
   , apiKeyInfoKey          :: ApiKey
@@ -817,11 +874,13 @@ data ApiKeysResp = OkApiKeysResp {
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- users
+-- Users
 --------------------------------------------------------------------------------
 
 -- alerta doesn't require login, password but returns a 500 if they are missing
 -- yay, cowboy coding
+
+-- Data needed to create a user
 data User = User {
     userName          :: UserName
   , userLogin         :: Email
@@ -831,23 +890,26 @@ data User = User {
   , userEmailVerified :: Maybe Bool
   } deriving (Show, Generic)
 
+-- | Create a user with just the mandatory fields.
 user :: UserName -> Email -> Password -> User
 user name login password = User name login password Nothing Nothing Nothing
 
--- bugs:
--- * can't update password without also passing provider=basic
---   as alerta checks the update message, not the user
--- * can't set email_verified to false without providing another parameter
-data UserUpdate = UserUpdate {
-    userUpdateName          :: Maybe UserName
-  , userUpdateLogin         :: Maybe Email
-  , userUpdatePassword      :: Maybe Password
-  , userUpdateProvider      :: Maybe Provider
-  , userUpdateText          :: Maybe String
-  , userUpdateEmail_verified :: Maybe Bool
-  } deriving (Show, Generic, Default)
-
 data IsEmpty = Empty | Nonempty | UnknownIfEmpty
+
+-- | User attributes, used in updating a user.
+-- It's an error to update a user with all attributes missing.
+--
+-- We track whether at least one attribute has been set with a phantom type.
+--
+-- Alerta bugs:
+--
+-- * can't update password without also passing provider=basic
+--   as alerta checks the update message, not the user.
+--
+-- * can't set email_verified to false without providing another parameter.
+--
+-- The helper functions "withUserName" etc. can be used in conjunction with
+-- the default empty "UserAttr" to build up a nonempty "UserAttr".
 
 data UserAttr (u :: IsEmpty) = UserAttr {
     userAttrName           :: Maybe UserName
@@ -862,8 +924,8 @@ emptyUserAttr :: UserAttr 'Empty
 emptyUserAttr = UserAttr Nothing Nothing Nothing Nothing Nothing Nothing
 
 checkNonempty :: UserAttr u -> Either (UserAttr 'Empty) (UserAttr 'Nonempty)
-checkNonempty a@(UserAttr Nothing Nothing Nothing Nothing Nothing Nothing) =  Left $ coerce a
-checkNonempty a = Right $ coerce a
+checkNonempty a@(UserAttr Nothing Nothing Nothing Nothing Nothing Nothing) = Left  $ coerce a
+checkNonempty a                                                            = Right $ coerce a
 
 instance Default (UserAttr 'Empty) where
   def = emptyUserAttr
@@ -892,7 +954,7 @@ instance FromJSON (UserAttr 'UnknownIfEmpty) where
       v .:? "email_verified"
   parseJSON _ = empty
 
--- TODO lenses
+-- TODO replace with lenses
 withUserName          :: UserAttr u -> UserName -> UserAttr 'Nonempty
 withUserLogin         :: UserAttr u -> Email    -> UserAttr 'Nonempty
 withUserPassword      :: UserAttr u -> Password -> UserAttr 'Nonempty
@@ -952,7 +1014,7 @@ data UsersResp = OkUsersResp {
   } deriving (Show, Generic)
 
 --------------------------------------------------------------------------------
--- customers
+-- Customers
 --------------------------------------------------------------------------------
 
 data Customer = Customer {

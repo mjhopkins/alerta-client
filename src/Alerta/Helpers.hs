@@ -1,3 +1,9 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module: Alerta.Helpers
+--
+-- Utilities for manual testing interaction with the API.
+--------------------------------------------------------------------------------
 module Alerta.Helpers
   ( run
   , run'
@@ -19,19 +25,18 @@ import           Network.HTTP.Client      (Manager, defaultManagerSettings, newM
 import           Servant.Client
 import           System.IO.Unsafe
 
---------------------------------------------------------------------------------
--- utilities for manual testing and interaction with api
---------------------------------------------------------------------------------
-
 clientEnv :: Manager -> ClientEnv
 clientEnv m = ClientEnv m (BaseUrl Http "localhost" 8080 "")
 
+-- | Run a Servant client function, pretty-printing the JSON returned.
 run :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO a
 run cl = do
   manager <- newManager defaultManagerSettings
   res <- runClientM cl (clientEnv manager)
   either handleError (\r -> prettyPrint r >> putStrLn "Success" >> return r) res
 
+-- | Run a Servant client function, pretty-printing the JSON returned, and
+-- discarding the return value.
 run' :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO ()
 run' = void . run
 
@@ -56,8 +61,10 @@ replace assocs s = T.unpack $ foldr replace' (T.pack s) assocs'
         replace' :: (Text, Text) -> Text -> Text
         replace' (a,b) = T.replace a b
 
+-- | Pretty-print the JSON encoding of the supplied value.
 prettyPrintEncoding :: ToJSON a => a -> IO ()
 prettyPrintEncoding = putStrLn . showUnescaped . encodePretty
 
+-- | Current time. Not referentially transparent!
 now :: () -> UTCTime
 now _ = unsafePerformIO getCurrentTime

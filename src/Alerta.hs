@@ -1,57 +1,77 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE TypeOperators  #-}
 
+--------------------------------------------------------------------------------
+-- |
+-- Module: Alerta
+-- Description:  Bindings to the alerta API
+--
+-- The alerta API allows you to query and modify
+--
+--   * Alerts
+--
+--   * Environments
+--
+--   * Services
+--
+--   * Blackouts
+--
+--   * Heartbeats
+--
+--   * API Keys
+--
+--   * Users
+--
+--   * Customers
+--------------------------------------------------------------------------------
+
 module Alerta
   (
-  -- * Types
-    Limited
-  , Page
-  , Sort
-  , Grouped
-  , Fields
-  , Query
-  , module Alerta.Types
-  , module Alerta.Helpers
-  -- * alerts
-  , createAlert
+  -- * Bindings
+  -- ** Alerts
+    createAlert
   , getAlert
   , deleteAlert
   , setAlertStatus
   , tagAlert
   , untagAlert
   , updateAlertAttributes
-  -- * alert history and queries
+  -- ** Alert history and alert queries
   , listAlerts
   , alertHistory
   , countAlerts
   , top10
   , flappingTop10
-  -- * environments
+  -- ** Environments
   , listEnvironments
-  -- * services
+  -- ** Services
   , listServices
-  -- * blackouts
+  -- ** Blackouts
   , createBlackout
   , deleteBlackout
   , listBlackouts
-  -- * heartbeats
+  -- ** Heartbeats
   , createHeartbeat
   , getHeartbeat
   , deleteHeartbeat
   , listHeartbeats
-  -- * API keys
+  -- ** API keys
   , createApiKey
   , deleteApiKey
   , listApiKeys
-  -- * users
+  -- ** Users
   , createUser
   , deleteUser
   , updateUser
   , listUsers
-  -- * customers
+  -- ** Customers
   , createCustomer
   , deleteCustomer
   , listCustomers
+  -- * Types
+  , module Alerta.Types
+  -- * Helpers
+  , module Alerta.Helpers
   ) where
 
 import           Alerta.Auth
@@ -60,20 +80,6 @@ import           Alerta.ServantExtras
 import           Alerta.Types
 import           Servant
 import           Servant.Client
-
---------------------------------------------------------------------------------
--- The alerta API allows you to query/modify
-
---   * Alerts
---   * Environments
---   * Services
---   * Blackouts
---   * Heartbeats
---   * Api Keys
---   * Users
---   * Customers
-
---------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- query parameter types
@@ -128,7 +134,7 @@ type AlertsApi =
 -- An environment cannot be created – it is a dynamically derived resource based on existing alerts.
 type EnvironmentApi =
   WithApiKey :> "environments" :> Query (Limited (Get '[JSON] EnvironmentsResp))
---
+
 -- A service cannot be created – it is a dynamically derived resource based on existing alerts.
 type ServiceApi =
   WithApiKey :> "services" :> Query (Limited (Get '[JSON] ServicesResp))
@@ -184,11 +190,13 @@ createAlert            :<|>
 listAlerts ::
      Maybe ApiKey
   -> Maybe QueryString
+    -- ^ this is a JSON document describing a Mongo query
+    -- see http://docs.mongodb.org/manual/reference/operator/query/
   -> [UUID]
   -> IsRepeat
   -> [FieldQuery]
-  -> Maybe [AlertAttr]
-  -> Maybe [AlertAttr]
+  -> Maybe [AlertAttr]  -- ^ alert attributes to show
+  -> Maybe [AlertAttr]  -- ^ alert attributes to hide
   -> Maybe ShouldReverse
   -> [AlertAttr]
   -> Maybe PageNo
@@ -202,9 +210,29 @@ alertHistory ::
   -> [FieldQuery]
   -> Maybe Limit
   -> ClientM AlertHistoryResp
-countAlerts   :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> IsRepeat -> [FieldQuery] ->  ClientM AlertCountResp
-top10         :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> IsRepeat -> [FieldQuery] -> Maybe AlertAttr -> ClientM Top10Resp
-flappingTop10 :: Maybe ApiKey -> Maybe QueryString -> [UUID] -> IsRepeat -> [FieldQuery] -> Maybe AlertAttr -> ClientM Top10Resp
+countAlerts ::
+     Maybe ApiKey
+  -> Maybe QueryString
+  -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
+  -> ClientM AlertCountResp
+top10 ::
+     Maybe ApiKey
+  -> Maybe QueryString
+  -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
+  -> Maybe AlertAttr
+  -> ClientM Top10Resp
+flappingTop10 ::
+     Maybe ApiKey
+  -> Maybe QueryString
+  -> [UUID]
+  -> IsRepeat
+  -> [FieldQuery]
+  -> Maybe AlertAttr
+  -> ClientM Top10Resp
 
 listAlerts    :<|>
  alertHistory :<|>

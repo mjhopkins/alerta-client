@@ -6,6 +6,12 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
+--------------------------------------------------------------------------------
+-- |
+-- Module: Alerta.Auth
+--
+-- Auth-related additions to Servant that we use.
+--------------------------------------------------------------------------------
 module Alerta.Auth
   ( WithApiKey
   , NeedApiKey

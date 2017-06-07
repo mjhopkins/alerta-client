@@ -6,6 +6,12 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 
+--------------------------------------------------------------------------------
+-- Module: Alerta.ServantExtras
+--
+-- Additions to Servant needed to cope with the peculiarities of
+-- alerta's REST API.
+--------------------------------------------------------------------------------
 module Alerta.ServantExtras
   ( FieldQueries
   ) where

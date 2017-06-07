@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module: Alerta.Util
+--
+-- Internal utilities used by the Alerta package.
+-- e.g. Aeson helper functions.
+--------------------------------------------------------------------------------
 module Alerta.Util
   ( toOpts
   , AesonOpts(..)
