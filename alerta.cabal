@@ -1,5 +1,5 @@
 name:                alerta
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Bindings to the alerta REST API
 homepage:            https://github.com/mjhopkins/alerta-client
 bug-reports:         https://github.com/mjhopkins/alerta-client/issues
