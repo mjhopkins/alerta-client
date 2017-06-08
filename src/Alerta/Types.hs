@@ -145,27 +145,27 @@ import           GHC.Generics
 
 import           Web.HttpApiData
 
-type Resource      = String
-type Event         = String
-type Service       = String
-type Environment   = String
-type Group         = String
-type Origin        = String
-type AlertType     = String
-type UserName      = String
-type CustomerName  = String
-type Tag           = String
-type Email         = String -- TODO actual email type
-type Password      = String
-type Provider      = String -- TODO make into data type
+type Resource      = Text
+type Event         = Text
+type Service       = Text
+type Environment   = Text
+type Group         = Text
+type Origin        = Text
+type AlertType     = Text
+type UserName      = Text
+type CustomerName  = Text
+type Tag           = Text
+type Email         = Text -- TODO actual email type
+type Password      = Text
+type Provider      = Text -- TODO make into data type
 type ShouldReverse = Bool   -- ^ whether to reverse the order of a sort
 type Limit         = Int    -- ^ maximum number of results to return (actually a positive int)
 type PageNo        = Int    -- ^ what page of the results to return (actually a positive int)
-type UUID          = String -- TODO actual UUID type?
-type Href          = String -- TODO use URL type for hrefs
+type UUID          = Text -- TODO actual UUID type?
+type Href          = Text -- TODO use URL type for hrefs
 -- | This is a JSON document describing a Mongo query,
 -- see http://docs.mongodb.org/manual/reference/operator/query/
-type QueryString   = String -- TODO should be JSON or an ADT representing a Mongo query
+type QueryString   = Text -- TODO should be JSON or an ADT representing a Mongo query
 type IsRepeat      = Bool
 -- ^ true for duplicate, false if an alert is correlated (in which case alerta appends an item to
 -- the history)
@@ -174,7 +174,7 @@ type IsRepeat      = Bool
 -- Field queries
 --------------------------------------------------------------------------------
 
-type FieldQuery = (QueryAttr, String, MatchType, Bool)
+type FieldQuery = (QueryAttr, Text, MatchType, Bool)
 
 -- | Matches can be either literal or regular expressions.
 -- n.b. regexes are case-insensitive and are not anchored,
@@ -183,7 +183,7 @@ data MatchType = Regex | Literal deriving (Eq, Enum, Show, Read, Generic)
 
 -- | Convenient syntax for the four types of field queries
 -- viz. literal, negated literal, regex, negated regex.
-(=.), (!=), (~.), (!~) :: QueryAttr -> String -> FieldQuery
+(=.), (!=), (~.), (!~) :: QueryAttr -> Text -> FieldQuery
 k =. v =  (k, v, Literal, True)
 k != v =  (k, v, Literal, False)
 k ~. v =  (k, v, Regex,   True)
@@ -329,7 +329,7 @@ instance FromHttpApiData TrendIndication where
 
 -- | This type is used for basic responses that have no content beyond whether they succeeded or
 -- failed with an error message.
-data Resp = OkResp | ErrorResp { respMessage :: String }
+data Resp = OkResp | ErrorResp { respMessage :: Text }
   deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -347,16 +347,16 @@ data Alert = Alert {
   , alertService     :: Maybe [Service]
   , alertGroup       :: Maybe Group     -- ^ defaults to @Misc@
   , alertValue       :: Maybe Value     -- ^ defaults to @n/a@
-  , alertText        :: Maybe String
+  , alertText        :: Maybe Text
   , alertTags        :: Maybe [Tag]
-  , alertAttributes  :: Maybe (Map String String)
+  , alertAttributes  :: Maybe (Map Text Text)
   -- Attribute keys must not contain "." or "$"
   -- note that key "ip" will be overwritten
   , alertOrigin      :: Maybe Origin    -- ^ defaults to prog\/machine ('%s\/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1]))
   , alertType        :: Maybe AlertType -- ^ defaults to @exceptionAlert@
   , alertCreateTime  :: Maybe UTCTime   -- ^ defaults to @utcnow()@
   , alertTimeout     :: Maybe Int       -- ^ in seconds; defaults to 86400 (24 hours)
-  , alertRawData     :: Maybe String
+  , alertRawData     :: Maybe Text
   , alertCustomer    :: Maybe CustomerName
   } deriving (Eq, Show, Generic)
 
@@ -397,14 +397,14 @@ data AlertInfo = AlertInfo {
   , alertInfoService          :: [Service]
   , alertInfoGroup            :: Group  -- ^ defaults to @misc@
   , alertInfoValue            :: Value  -- ^ defaults to @n/a@
-  , alertInfoText             :: String -- ^ defaults to empty string
+  , alertInfoText             :: Text -- ^ defaults to empty string
   , alertInfoTags             :: [Tag]
-  , alertInfoAttributes       :: Map String String -- ^ Attribute keys must not contain "." or "$"
+  , alertInfoAttributes       :: Map Text Text -- ^ Attribute keys must not contain "." or "$"
   , alertInfoOrigin           :: Origin            -- ^ defaults to prog\/machine
   , alertInfoType             :: AlertType         -- ^ defaults to @exceptionAlert@
   , alertInfoCreateTime       :: UTCTime
   , alertInfoTimeout          :: Int
-  , alertInfoRawData          :: Maybe String
+  , alertInfoRawData          :: Maybe Text
   , alertInfoCustomer         :: Maybe CustomerName
   , alertInfoDuplicateCount   :: Maybe Int
   , alertInfoRepeat           :: Maybe Bool
@@ -486,13 +486,13 @@ instance ToHttpApiData AlertAttr where
 data HistoryItem = StatusHistoryItem {
     historyItemEvent      :: Event
   , historyItemStatus     :: Status
-  , historyItemText       :: String
+  , historyItemText       :: Text
   , historyItemId         :: UUID
   , historyItemUpdateTime :: UTCTime
   } | SeverityHistoryItem {
     historyItemEvent      :: Event
   , historyItemSeverity   :: Severity
-  , historyItemText       :: String
+  , historyItemText       :: Text
   , historyItemId         :: UUID
   , historyItemUpdateTime :: UTCTime
   , historyItemValue      :: Value
@@ -509,7 +509,7 @@ data ExtendedHistoryItem = StatusExtendedHistoryItem {
   , statusExtendedHistoryItemGroup       :: Group
   , statusExtendedHistoryItemText        :: Text
   , statusExtendedHistoryItemTags        :: [Tag]
-  , statusExtendedHistoryItemAttributes  :: Map String String
+  , statusExtendedHistoryItemAttributes  :: Map Text Text
   , statusExtendedHistoryItemOrigin      :: Origin
   , statusExtendedHistoryItemUpdateTime  :: UTCTime
   , statusExtendedHistoryItemCustomer    :: Maybe CustomerName
@@ -524,7 +524,7 @@ data ExtendedHistoryItem = StatusExtendedHistoryItem {
   , severityExtendedHistoryItemValue       :: Value
   , severityExtendedHistoryItemText        :: Text
   , severityExtendedHistoryItemTags        :: [Tag]
-  , severityExtendedHistoryItemAttributes  :: Map String String
+  , severityExtendedHistoryItemAttributes  :: Map Text Text
   , severityExtendedHistoryItemOrigin      :: Origin
   , severityExtendedHistoryItemUpdateTime  :: UTCTime
   , severityExtendedHistoryItemCustomer    :: Maybe CustomerName
@@ -533,13 +533,13 @@ data ExtendedHistoryItem = StatusExtendedHistoryItem {
 newtype Tags = Tags { tags :: [Tag] } deriving (Eq, Show, Generic)
 
 -- | Attributes are key-value pairs that can be attached to an alert.
-newtype Attributes = Attributes { attributes :: Map String String } deriving (Eq, Show, Generic)
+newtype Attributes = Attributes { attributes :: Map Text Text } deriving (Eq, Show, Generic)
 
 data StatusChange = StatusChange {
     statusChangeStatus :: Status -- docs say not "unknown" but the api allows it
     -- (in fact any text is accepted - but our parsing code need to be able
     -- to read it back from the alert history)
-  , statusChangeText   :: Maybe String
+  , statusChangeText   :: Maybe Text
   } deriving (Eq, Show, Generic)
 
 data CreateAlertResp = OkCreateAlertResp {
@@ -568,18 +568,18 @@ data AlertsResp = OkAlertsResp {
   , okAlertsRespStatusCounts     :: Maybe (Map Status Int)
   , okAlertsRespLastTime         :: UTCTime
   , okAlertsRespAutoRefresh      :: Bool
-  , okAlertsRespMessage          :: Maybe String
+  , okAlertsRespMessage          :: Maybe Text
   } | ErrorAlertsResp {
-    errorAlertsRespMessage       :: String
+    errorAlertsRespMessage       :: Text
   } deriving (Eq, Show, Generic)
 
 data AlertCountResp = OkAlertCountResp {
     okAlertCountRespTotal          :: Int
   , okAlertCountRespSeverityCounts :: Int
   , okAlertCountRespStatusCounts   :: Int
-  , okAlertCountRespMessage        :: Maybe String
+  , okAlertCountRespMessage        :: Maybe Text
   } | ErrorAlertCountResp {
-    errorAlertCountRespMessage     :: String
+    errorAlertCountRespMessage     :: Text
   } deriving (Eq, Show, Generic)
 
 data ResourceInfo = ResourceInfo {
@@ -603,17 +603,17 @@ data Top10Info = Top10Info {
 data Top10Resp = OkTop10Resp {
     okTop10RespTop10   :: [Top10Info]
   , okTop10RespTotal   :: Int
-  , okTop10RespMessage :: Maybe String
+  , okTop10RespMessage :: Maybe Text
   } | ErrorTop10Resp {
-    errorTop10RespMessage :: String
+    errorTop10RespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 data AlertHistoryResp = OkAlertHistoryResp {
     okAlertHistoryRespHistory  :: [ExtendedHistoryItem]
   , okAlertHistoryRespLastTime :: UTCTime
-  , okAlertHistoryRespMessage  :: Maybe String
+  , okAlertHistoryRespMessage  :: Maybe Text
   } | ErrorAlertHistoryResp {
-    errorAlertHistoryResp      :: String
+    errorAlertHistoryResp      :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -626,11 +626,11 @@ data EnvironmentInfo = EnvironmentInfo {
   } deriving (Eq, Show, Generic)
 
 data EnvironmentsResp = OkEnvironmentsResp {
-    okEnvironmentsRespMessage      :: Maybe String
+    okEnvironmentsRespMessage      :: Maybe Text
   , okEnvironmentsRespTotal        :: Int
   , okEnvironmentsRespEnvironments :: [EnvironmentInfo]
   } | ErrorEnvironmentsResp {
-    errorEnvironmentsRespMessage :: String
+    errorEnvironmentsRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -646,9 +646,9 @@ data ServiceInfo = ServiceInfo {
 data ServicesResp = OkServicesResp {
     okServicesRespTotal    :: Int
   , okServicesRespServices :: [ServiceInfo]
-  , okServicesRespMessage  :: Maybe String
+  , okServicesRespMessage  :: Maybe Text
   } | ErrorServicesResp {
-    errorServicesRespMessage :: String
+    errorServicesRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -734,16 +734,16 @@ data BlackoutResp = OkBlackoutResp {
     okBlackoutRespId       :: UUID
   , okBlackoutRespBlackout :: BlackoutInfo
   } | ErrorBlackoutResp {
-    errorBlackoutRespMessage :: String
+    errorBlackoutRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 data BlackoutsResp = OkBlackoutsResp {
     okBlackoutsRespTotal     :: Int
   , okBlackoutsRespBlackouts :: [ExtendedBlackoutInfo]
-  , okBlackoutsRespMessage   :: Maybe String
+  , okBlackoutsRespMessage   :: Maybe Text
   , okBlackoutsRespTime      :: UTCTime
   } | ErrorBlackoutsResp {
-    errorBlackoutsRespMessage :: String
+    errorBlackoutsRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 
@@ -770,30 +770,30 @@ data HeartbeatInfo = HeartbeatInfo {
   , heartbeatInfoReceiveTime :: UTCTime
   , heartbeatInfoTags        :: [Tag]
   , heartbeatInfoTimeout     :: Int
-  , heartbeatInfoType        :: String
+  , heartbeatInfoType        :: Text
   } deriving (Eq, Show, Generic)
 
 data CreateHeartbeatResp = OkCreateHeartbeatResp {
     createHeartbeatRespId        :: UUID
   , createHeartbeatRespHeartbeat :: HeartbeatInfo
   } | ErrorCreateHeartbeatResp {
-    createHeartbeatRespMessage   :: String
+    createHeartbeatRespMessage   :: Text
   } deriving (Eq, Show, Generic)
 
 data HeartbeatResp = OkHeartbeatResp {
     heartbeatRespHeartbeat :: HeartbeatInfo
   , heartbeatRespTotal     :: Int
   } | ErrorHeartbeatResp {
-    heartbeatRespMessage   :: String
+    heartbeatRespMessage   :: Text
   } deriving (Eq, Show, Generic)
 
 data HeartbeatsResp = OkHeartbeatsResp {
     heartbeatsRespHeartbeats   :: [HeartbeatInfo]
   , heartbeatsRespTime         :: Maybe UTCTime
   , heartbeatsRespTotal        :: Int
-  , heartbeatsRespMessage      :: Maybe String
+  , heartbeatsRespMessage      :: Maybe Text
   } | ErrorHeartbeatsResp {
-    heartbeatsRespErrorMessage :: String
+    heartbeatsRespErrorMessage :: Text
   } deriving (Eq, Show, Generic)
 
 
@@ -830,7 +830,7 @@ data CreateApiKey = CreateApiKey {
     createApiKeyUser     :: Maybe Email         -- ^ only read if authorised as admin, defaults to current user
   , createApiKeyCustomer :: Maybe CustomerName  -- ^ only read if authorised as admin, defaults to current customer
   , createApiKeyType     :: Maybe ApiKeyType    -- ^ defaults to read-only
-  , createApiKeyText     :: Maybe String        -- ^ defaults to "API Key for $user"
+  , createApiKeyText     :: Maybe Text        -- ^ defaults to "API Key for $user"
   } deriving (Eq, Show, Generic, Default)
 
 data ApiKeyType = ReadOnly | ReadWrite deriving (Eq, Ord, Bounded, Enum, Ix, Generic)
@@ -850,7 +850,7 @@ data ApiKeyInfo = ApiKeyInfo {
     apiKeyInfoUser         :: Email
   , apiKeyInfoKey          :: ApiKey
   , apiKeyInfoType         :: ApiKeyType
-  , apiKeyInfoText         :: String
+  , apiKeyInfoText         :: Text
   , apiKeyInfoExpireTime   :: UTCTime
   , apiKeyInfoCount        :: Int -- number of times used
   , apiKeyInfoLastUsedTime :: Maybe UTCTime
@@ -861,16 +861,16 @@ data CreateApiKeyResp = OkCreateApiKeyResp {
     okCreateApiKeyRespKey        :: ApiKey 
   , okCreateApiKeyRespData       :: ApiKeyInfo
   } | ErrorCreateApiKeyResp {
-    errorCreateApiKeyRespMessage :: String
+    errorCreateApiKeyRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 data ApiKeysResp = OkApiKeysResp {
     okApiKeysRespKeys       :: [ApiKeyInfo]
   , okApiKeysRespTotal      :: Int
   , okApiKeysRespTime       :: UTCTime
-  , okApiKeysRespMessage    :: Maybe String
+  , okApiKeysRespMessage    :: Maybe Text
   } | ErrorApiKeysResp {
-    errorApiKeysRespMessage :: String
+    errorApiKeysRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -886,7 +886,7 @@ data User = User {
   , userLogin         :: Email
   , userPassword      :: Password
   , userProvider      :: Maybe Provider
-  , userText          :: Maybe String
+  , userText          :: Maybe Text
   , userEmailVerified :: Maybe Bool
   } deriving (Show, Generic)
 
@@ -916,7 +916,7 @@ data UserAttr (u :: IsEmpty) = UserAttr {
   , userAttrLogin          :: Maybe Email
   , userAttrPassword       :: Maybe Password
   , userAttrProvider       :: Maybe Provider
-  , userAttrText           :: Maybe String
+  , userAttrText           :: Maybe Text
   , userAttrEmail_verified :: Maybe Bool
   } deriving (Eq, Show, Generic)
 
@@ -959,7 +959,7 @@ withUserName          :: UserAttr u -> UserName -> UserAttr 'Nonempty
 withUserLogin         :: UserAttr u -> Email    -> UserAttr 'Nonempty
 withUserPassword      :: UserAttr u -> Password -> UserAttr 'Nonempty
 withUserProvider      :: UserAttr u -> Provider -> UserAttr 'Nonempty
-withUserText          :: UserAttr u -> String   -> UserAttr 'Nonempty
+withUserText          :: UserAttr u -> Text   -> UserAttr 'Nonempty
 withUserEmailVerified :: UserAttr u -> Bool     -> UserAttr u
 withUserName          u s = u { userAttrName = Just s }
 withUserLogin         u s = u { userAttrLogin = Just s }
@@ -975,7 +975,7 @@ data UserInfo = UserInfo {
   , userInfoName           :: UserName
   , userInfoProvider       :: Provider
   , userInfoLogin          :: Email
-  , userInfoText           :: String
+  , userInfoText           :: Text
   , userInfoEmail_verified :: Bool
   } deriving (Show, Generic)
 
@@ -989,7 +989,7 @@ data ExtendedUserInfo = ExtendedUserInfo {
   , extendedUserInfoLogin          :: Email
   , extendedUserInfoProvider       :: Provider
   , extendedUserInfoRole           :: RoleType
-  , extendedUserInfoText           :: String
+  , extendedUserInfoText           :: Text
   , extendedUserInfoEmail_verified :: Bool
   } deriving (Show, Generic)
 
@@ -997,20 +997,20 @@ data UserResp = OkUserResp {
     okUserRespId   :: UUID
   , okUserRespUser :: UserInfo
   } | ErrorUserResp {
-    errorUserRespMessage :: String
+    errorUserRespMessage :: Text
   } deriving (Show, Generic)
 
 data UsersResp = OkUsersResp {
     okUsersRespUsers   :: [ExtendedUserInfo]
   , okUsersRespTotal   :: Int
-  , okUsersRespDomains :: [String]       -- allowed email domains
-  , okUsersRespGroups  :: [String]       -- allowed Gitlab groups
-  , okUsersRespOrgs    :: [String]       -- allowed Github orgs
-  , okUsersRespRoles   :: Maybe [String] -- allowed Keycloud roles
+  , okUsersRespDomains :: [Text]       -- allowed email domains
+  , okUsersRespGroups  :: [Text]       -- allowed Gitlab groups
+  , okUsersRespOrgs    :: [Text]       -- allowed Github orgs
+  , okUsersRespRoles   :: Maybe [Text] -- allowed Keycloud roles
   , okUsersRespTime    :: UTCTime
-  , okUsersRespMessage :: Maybe String
+  , okUsersRespMessage :: Maybe Text
   } | ErrorUsersResp {
-    errorUsersResp :: String
+    errorUsersResp :: Text
   } deriving (Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -1019,29 +1019,29 @@ data UsersResp = OkUsersResp {
 
 data Customer = Customer {
     customerCustomer :: CustomerName
-  , customerMatch    :: String -- regex, apparently
+  , customerMatch    :: Text -- regex, apparently
   } deriving (Show, Generic)
 
 data CustomerInfo = CustomerInfo {
     customerInfoId       :: UUID
   , customerInfoCustomer :: CustomerName
-  , customerInfoMatch    :: String -- regex, apparently
+  , customerInfoMatch    :: Text -- regex, apparently
   } deriving (Show, Generic)
 
 data CustomerResp = OkCustomerResp {
     okCustomerRespId         :: UUID
   , okCustomerRespCustomer   :: CustomerInfo
   } | ErrorCustomerResp {
-    errorCustomerRespMessage :: String
+    errorCustomerRespMessage :: Text
   } deriving (Show, Generic)
 
 data CustomersResp = OkCustomersResp {
     okCustomersRespCustomers :: [CustomerInfo]
   , okCustomersRespTotal     :: Int
-  , okCustomersRespMessage   :: Maybe String
+  , okCustomersRespMessage   :: Maybe Text
   , okCustomersRespTime      :: UTCTime
   } | ErrorCustomersResp {
-    errorCustomersMessage    :: String
+    errorCustomersMessage    :: Text
   } deriving (Show, Generic)
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
