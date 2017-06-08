@@ -11,7 +11,7 @@ copyright:           Mark Hopkins
 category:            Monitoring, API, Web
 build-type:          Simple
 stability:           experimental
-extra-source-files:  README.md
+extra-source-files:  README.md CHANGELOG.md
 cabal-version:       >= 1.10
 description:
   <http://alerta.io Alerta> is an alert monitoring tool developed by the
