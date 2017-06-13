@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module: Alerta.Helpers
@@ -41,7 +43,11 @@ run' :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO ()
 run' = void . run
 
 handleError :: (FromJSON a, ToJSON a) => ServantError -> IO a
+#if MIN_VERSION_servant_client(0,11,0)
+handleError (FailureResponse _ status _ b) = either fail (\r -> putStrLn ("Failure response (status " ++ show status ++ ")") >> prettyPrint r >> return r) (eitherDecode b)
+#else
 handleError (FailureResponse status _ b)   = either fail (\r -> putStrLn ("Failure response (status " ++ show status ++ ")") >> prettyPrint r >> return r) (eitherDecode b)
+#endif
 handleError (DecodeFailure e _ b)          = fail ("decode failure\n\n" ++ e ++ "\n\n" ++ showUnescaped b)
 handleError (UnsupportedContentType ct b)  = fail ("unsupported content type\n\n" ++ show ct ++ "\n" ++ show b)
 handleError (InvalidContentTypeHeader h b) = fail ("unsupported content type type\n\n" ++ show h ++ "\n" ++ show b)

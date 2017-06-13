@@ -15,7 +15,7 @@ module Alerta.Util
   , dropRight
   ) where
 
-import           Data.Aeson.TH
+import           Data.Aeson.TH            as Aeson
 import           Data.Char
 import           Data.Default             
 import qualified Data.Text                as T
@@ -27,8 +27,8 @@ instance Default AesonOpts where
   def = AesonOpts "status" True
 
 -- TODO increment num words dropped from fieldLabel when tag is set, otherwise don't use TaggedObject
-toOpts :: Int -> Int -> AesonOpts -> Data.Aeson.TH.Options
-toOpts k n (AesonOpts f u) = Data.Aeson.TH.Options {
+toOpts :: Int -> Int -> AesonOpts -> Aeson.Options
+toOpts k n (AesonOpts f u) = Aeson.defaultOptions {
     fieldLabelModifier     = uncapitalise . onCamelComponents (drop k)
   , constructorTagModifier = uncapitalise . onCamelComponents (dropRight n)
   , omitNothingFields      = True
