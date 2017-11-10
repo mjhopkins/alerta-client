@@ -17,14 +17,14 @@ module Alerta.Auth
   , NeedApiKey
   ) where
 
-import           Alerta.Types       (ApiKey(..))
+import           Alerta.Types       (ApiKey (..))
 
-import           Data.Typeable      (Typeable)
 import           Data.Monoid        ((<>))
 import           Data.Proxy
-import           Servant.Common.Req (Req, addHeader)
-import           Servant.Client
+import           Data.Typeable      (Typeable)
 import           Servant.API        ((:>))
+import           Servant.Client
+import           Servant.Common.Req (Req, addHeader)
 
 data NeedApiKey deriving Typeable
 data WithApiKey deriving Typeable

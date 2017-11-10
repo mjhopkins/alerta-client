@@ -190,7 +190,7 @@ k ~. v =  (k, v, Regex,   True)
 k !~ v =  (k, v, Regex,   False)
 
 -- | These are the valid keys for use in field queries.
--- 
+--
 -- NB no 'id', 'repeat' or 'duplicateCount' as these have special handling.
 data QueryAttr =
     EventQueryAttr
@@ -337,8 +337,8 @@ data Resp = OkResp | ErrorResp { respMessage :: Text }
 --------------------------------------------------------------------------------
 
 -- | Data required to create (post) an alert.
-data Alert = Alert {
-    alertResource    :: Resource
+data Alert = Alert
+  { alertResource    :: Resource
   , alertEvent       :: Event
   , alertEnvironment :: Maybe Environment
   , alertSeverity    :: Maybe Severity
@@ -362,8 +362,8 @@ data Alert = Alert {
 
 -- | Create an alert with just the mandatory fields.
 mkAlert :: Resource -> Event -> Service -> Alert
-mkAlert r e s = Alert {
-    alertResource    = r
+mkAlert r e s = Alert
+  { alertResource    = r
   , alertEvent       = e
   -- supposed to be optional, but RejectPolicy plugin requires it to be one of ALLOWED_ENVIRONMENTS
   , alertEnvironment = Just "Development"
@@ -386,8 +386,8 @@ mkAlert r e s = Alert {
   }
 
 -- | Data returned from the server about an alert
-data AlertInfo = AlertInfo {
-    alertInfoId               :: UUID
+data AlertInfo = AlertInfo
+  { alertInfoId               :: UUID
   , alertInfoResource         :: Resource
   , alertInfoEvent            :: Event
   , alertInfoEnvironment      :: Environment -- ^ defaults to empty string
@@ -483,8 +483,8 @@ instance IsString AlertAttr where
 instance ToHttpApiData AlertAttr where
   toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
 
-data HistoryItem = StatusHistoryItem {
-    historyItemEvent      :: Event
+data HistoryItem = StatusHistoryItem
+  { historyItemEvent      :: Event
   , historyItemStatus     :: Status
   , historyItemText       :: Text
   , historyItemId         :: UUID
@@ -499,8 +499,8 @@ data HistoryItem = StatusHistoryItem {
   } deriving (Eq, Show, Generic)
 
 -- | When performing an alert history query an enriched version of the alert history is returned with extra fields.
-data ExtendedHistoryItem = StatusExtendedHistoryItem {
-    statusExtendedHistoryItemId          :: UUID
+data ExtendedHistoryItem = StatusExtendedHistoryItem
+  { statusExtendedHistoryItemId          :: UUID
   , statusExtendedHistoryItemResource    :: Resource
   , statusExtendedHistoryItemEvent       :: Event
   , statusExtendedHistoryItemEnvironment :: Environment
@@ -513,8 +513,8 @@ data ExtendedHistoryItem = StatusExtendedHistoryItem {
   , statusExtendedHistoryItemOrigin      :: Origin
   , statusExtendedHistoryItemUpdateTime  :: UTCTime
   , statusExtendedHistoryItemCustomer    :: Maybe CustomerName
-  } | SeverityExtendedHistoryItem {
-    severityExtendedHistoryItemId          :: UUID
+  } | SeverityExtendedHistoryItem
+  { severityExtendedHistoryItemId          :: UUID
   , severityExtendedHistoryItemResource    :: Resource
   , severityExtendedHistoryItemEvent       :: Event
   , severityExtendedHistoryItemEnvironment :: Environment
@@ -535,30 +535,30 @@ newtype Tags = Tags { tags :: [Tag] } deriving (Eq, Show, Generic)
 -- | Attributes are key-value pairs that can be attached to an alert.
 newtype Attributes = Attributes { attributes :: Map Text Text } deriving (Eq, Show, Generic)
 
-data StatusChange = StatusChange {
-    statusChangeStatus :: Status -- docs say not "unknown" but the api allows it
+data StatusChange = StatusChange
+  { statusChangeStatus :: Status -- docs say not "unknown" but the api allows it
     -- (in fact any text is accepted - but our parsing code need to be able
     -- to read it back from the alert history)
   , statusChangeText   :: Maybe Text
   } deriving (Eq, Show, Generic)
 
-data CreateAlertResp = OkCreateAlertResp {
-    okCreateAlertRespId         :: UUID
+data CreateAlertResp = OkCreateAlertResp
+  { okCreateAlertRespId         :: UUID
   , okCreateAlertRespAlert      :: Maybe AlertInfo -- ^ not present if rate limited or in blackout
   , okCreateAlertRespMessage    :: Maybe Text      -- ^ present when rate limited or in blackout
   } | ErrorCreateAlertResp {
     errorCreateAlertRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-data AlertResp = OkAlertResp {
-    okAlertRespAlert      :: AlertInfo
+data AlertResp = OkAlertResp
+  { okAlertRespAlert      :: AlertInfo
   , okAlertRespTotal      :: Int
   } | ErrorAlertResp {
     errorAlertRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-data AlertsResp = OkAlertsResp {
-    okAlertsRespAlerts           :: [AlertInfo]
+data AlertsResp = OkAlertsResp
+  { okAlertsRespAlerts           :: [AlertInfo]
   , okAlertsRespTotal            :: Int
   , okAlertsRespPage             :: PageNo
   , okAlertsRespPageSize         :: Int
@@ -569,21 +569,21 @@ data AlertsResp = OkAlertsResp {
   , okAlertsRespLastTime         :: UTCTime
   , okAlertsRespAutoRefresh      :: Bool
   , okAlertsRespMessage          :: Maybe Text
-  } | ErrorAlertsResp {
-    errorAlertsRespMessage       :: Text
+  } | ErrorAlertsResp
+  { errorAlertsRespMessage       :: Text
   } deriving (Eq, Show, Generic)
 
-data AlertCountResp = OkAlertCountResp {
-    okAlertCountRespTotal          :: Int
+data AlertCountResp = OkAlertCountResp
+  { okAlertCountRespTotal          :: Int
   , okAlertCountRespSeverityCounts :: Int
   , okAlertCountRespStatusCounts   :: Int
   , okAlertCountRespMessage        :: Maybe Text
-  } | ErrorAlertCountResp {
-    errorAlertCountRespMessage     :: Text
+  } | ErrorAlertCountResp
+  { errorAlertCountRespMessage     :: Text
   } deriving (Eq, Show, Generic)
 
-data ResourceInfo = ResourceInfo {
-    resourceInfoId       :: UUID
+data ResourceInfo = ResourceInfo
+  { resourceInfoId       :: UUID
   , resourceInfoResource :: Resource
   , resourceInfoHref     :: Href
   } deriving (Eq, Show, Generic)
@@ -592,71 +592,71 @@ data ResourceInfo = ResourceInfo {
 -- i.e. if you group by origin, then the result will have an "origin" field.
 --
 -- This dependently-typed feature is not currently captured in the Haskell types.
-data Top10Info = Top10Info {
-    top10InfoCount          :: Int
+data Top10Info = Top10Info
+  { top10InfoCount          :: Int
   , top10InfoDuplicateCount :: Int
   , top10InfoEnvironments   :: [Environment]
   , top10InfoServices       :: [Service]
   , top10InfoResources      :: [ResourceInfo]
   } deriving (Eq, Show, Generic)
 
-data Top10Resp = OkTop10Resp {
-    okTop10RespTop10   :: [Top10Info]
+data Top10Resp = OkTop10Resp
+  { okTop10RespTop10   :: [Top10Info]
   , okTop10RespTotal   :: Int
   , okTop10RespMessage :: Maybe Text
-  } | ErrorTop10Resp {
-    errorTop10RespMessage :: Text
+  } | ErrorTop10Resp
+  { errorTop10RespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-data AlertHistoryResp = OkAlertHistoryResp {
-    okAlertHistoryRespHistory  :: [ExtendedHistoryItem]
+data AlertHistoryResp = OkAlertHistoryResp
+  { okAlertHistoryRespHistory  :: [ExtendedHistoryItem]
   , okAlertHistoryRespLastTime :: UTCTime
   , okAlertHistoryRespMessage  :: Maybe Text
-  } | ErrorAlertHistoryResp {
-    errorAlertHistoryResp      :: Text
+  } | ErrorAlertHistoryResp
+  { errorAlertHistoryResp      :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- Environments
 --------------------------------------------------------------------------------
 
-data EnvironmentInfo = EnvironmentInfo {
-    environmentInfoCount       :: Int
+data EnvironmentInfo = EnvironmentInfo
+  { environmentInfoCount       :: Int
   , environmentInfoEnvironment :: Environment
   } deriving (Eq, Show, Generic)
 
-data EnvironmentsResp = OkEnvironmentsResp {
-    okEnvironmentsRespMessage      :: Maybe Text
+data EnvironmentsResp = OkEnvironmentsResp
+  { okEnvironmentsRespMessage      :: Maybe Text
   , okEnvironmentsRespTotal        :: Int
   , okEnvironmentsRespEnvironments :: [EnvironmentInfo]
-  } | ErrorEnvironmentsResp {
-    errorEnvironmentsRespMessage :: Text
+  } | ErrorEnvironmentsResp
+  { errorEnvironmentsRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- Services
 --------------------------------------------------------------------------------
 
-data ServiceInfo = ServiceInfo {
-    serviceInfoCount       :: Int
+data ServiceInfo = ServiceInfo
+  { serviceInfoCount       :: Int
   , serviceInfoEnvironment :: Environment
   , serviceInfoService     :: Service
   } deriving (Eq, Show, Generic)
 
-data ServicesResp = OkServicesResp {
-    okServicesRespTotal    :: Int
+data ServicesResp = OkServicesResp
+  { okServicesRespTotal    :: Int
   , okServicesRespServices :: [ServiceInfo]
   , okServicesRespMessage  :: Maybe Text
-  } | ErrorServicesResp {
-    errorServicesRespMessage :: Text
+  } | ErrorServicesResp
+  { errorServicesRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- Blackouts
 --------------------------------------------------------------------------------
 
-data Blackout = Blackout {
-    blackoutEnvironment :: Environment
+data Blackout = Blackout
+  { blackoutEnvironment :: Environment
   , blackoutResource    :: Maybe Resource
   , blackoutService     :: Maybe Service
   , blackoutEvent       :: Maybe Event
@@ -686,7 +686,7 @@ blackout env = Blackout env Nothing Nothing Nothing Nothing Nothing Nothing Noth
 --   5. if group present
 --
 --   6. if resource and event present
---    
+--
 --   7. if tags present
 --
 -- Somewhat bizarrely, the saved blackout only includes an attribute
@@ -696,8 +696,8 @@ blackout env = Blackout env Nothing Nothing Nothing Nothing Nothing Nothing Noth
 -- if it was used to deduce the priority,
 -- i.e. a priority 6 blackout will have resource and event attributes,
 -- but no tags attribute, even if it was supplied when it was created.
-data BlackoutInfo = BlackoutInfo {
-    blackoutInfoId          :: UUID
+data BlackoutInfo = BlackoutInfo
+  { blackoutInfoId          :: UUID
   , blackoutInfoPriority    :: Int
   , blackoutInfoEnvironment :: Environment
   , blackoutInfoResource    :: Maybe Resource
@@ -713,8 +713,8 @@ data BlackoutInfo = BlackoutInfo {
 
 data BlackoutStatus = Expired | Pending | Active deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
 
-data ExtendedBlackoutInfo = ExtendedBlackoutInfo {
-    extendedBlackoutInfoId          :: UUID
+data ExtendedBlackoutInfo = ExtendedBlackoutInfo
+  { extendedBlackoutInfoId          :: UUID
   , extendedBlackoutInfoPriority    :: Int    -- see comment above
   , extendedBlackoutInfoEnvironment :: Environment
   , extendedBlackoutInfoResource    :: Maybe Resource
@@ -730,15 +730,15 @@ data ExtendedBlackoutInfo = ExtendedBlackoutInfo {
   , extendedBlackoutInfoStatus      :: BlackoutStatus
   } deriving (Eq, Show, Generic)
 
-data BlackoutResp = OkBlackoutResp {
-    okBlackoutRespId       :: UUID
+data BlackoutResp = OkBlackoutResp
+  { okBlackoutRespId       :: UUID
   , okBlackoutRespBlackout :: BlackoutInfo
   } | ErrorBlackoutResp {
     errorBlackoutRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-data BlackoutsResp = OkBlackoutsResp {
-    okBlackoutsRespTotal     :: Int
+data BlackoutsResp = OkBlackoutsResp
+  { okBlackoutsRespTotal     :: Int
   , okBlackoutsRespBlackouts :: [ExtendedBlackoutInfo]
   , okBlackoutsRespMessage   :: Maybe Text
   , okBlackoutsRespTime      :: UTCTime
@@ -752,8 +752,8 @@ data BlackoutsResp = OkBlackoutsResp {
 --------------------------------------------------------------------------------
 
 -- | Data needed to create a heartbeat
-data Heartbeat = Heartbeat {
-    heartbeatOrigin     :: Maybe Origin       -- defaults to prog/nodename
+data Heartbeat = Heartbeat
+  { heartbeatOrigin     :: Maybe Origin       -- defaults to prog/nodename
   , heartbeatTags       :: [Tag]
   , heartbeatCreateTime :: Maybe UTCTime
   , heartbeatTimeout    :: Maybe Int          -- seconds
@@ -761,8 +761,8 @@ data Heartbeat = Heartbeat {
   } deriving (Eq, Show, Generic, Default)
 
 -- | Information returned from the server about a heartbeat
-data HeartbeatInfo = HeartbeatInfo {
-    heartbeatInfoCreateTime  :: UTCTime
+data HeartbeatInfo = HeartbeatInfo
+  { heartbeatInfoCreateTime  :: UTCTime
   , heartbeatInfoCustomer    :: Maybe CustomerName
   , heartbeatInfoHref        :: Href
   , heartbeatInfoId          :: UUID
@@ -773,27 +773,27 @@ data HeartbeatInfo = HeartbeatInfo {
   , heartbeatInfoType        :: Text
   } deriving (Eq, Show, Generic)
 
-data CreateHeartbeatResp = OkCreateHeartbeatResp {
-    createHeartbeatRespId        :: UUID
+data CreateHeartbeatResp = OkCreateHeartbeatResp
+  { createHeartbeatRespId        :: UUID
   , createHeartbeatRespHeartbeat :: HeartbeatInfo
-  } | ErrorCreateHeartbeatResp {
-    createHeartbeatRespMessage   :: Text
+  } | ErrorCreateHeartbeatResp
+  { createHeartbeatRespMessage   :: Text
   } deriving (Eq, Show, Generic)
 
-data HeartbeatResp = OkHeartbeatResp {
-    heartbeatRespHeartbeat :: HeartbeatInfo
+data HeartbeatResp = OkHeartbeatResp
+  { heartbeatRespHeartbeat :: HeartbeatInfo
   , heartbeatRespTotal     :: Int
-  } | ErrorHeartbeatResp {
-    heartbeatRespMessage   :: Text
+  } | ErrorHeartbeatResp
+  { heartbeatRespMessage   :: Text
   } deriving (Eq, Show, Generic)
 
-data HeartbeatsResp = OkHeartbeatsResp {
-    heartbeatsRespHeartbeats   :: [HeartbeatInfo]
+data HeartbeatsResp = OkHeartbeatsResp
+  { heartbeatsRespHeartbeats   :: [HeartbeatInfo]
   , heartbeatsRespTime         :: Maybe UTCTime
   , heartbeatsRespTotal        :: Int
   , heartbeatsRespMessage      :: Maybe Text
-  } | ErrorHeartbeatsResp {
-    heartbeatsRespErrorMessage :: Text
+  } | ErrorHeartbeatsResp
+  { heartbeatsRespErrorMessage :: Text
   } deriving (Eq, Show, Generic)
 
 
@@ -826,8 +826,8 @@ instance ToHttpApiData ApiKey where
   toUrlPiece (ApiKey k) = k
 
 -- | Data needed to create an API key
-data CreateApiKey = CreateApiKey {
-    createApiKeyUser     :: Maybe Email         -- ^ only read if authorised as admin, defaults to current user
+data CreateApiKey = CreateApiKey
+  { createApiKeyUser     :: Maybe Email         -- ^ only read if authorised as admin, defaults to current user
   , createApiKeyCustomer :: Maybe CustomerName  -- ^ only read if authorised as admin, defaults to current customer
   , createApiKeyType     :: Maybe ApiKeyType    -- ^ defaults to read-only
   , createApiKeyText     :: Maybe Text        -- ^ defaults to "API Key for $user"
@@ -846,8 +846,8 @@ instance FromJSON ApiKeyType where
   parseJSON = genericParseJSON $ defaultOptions { constructorTagModifier = camelTo2 '-'}
 
 -- | Information returned from the server about an API key
-data ApiKeyInfo = ApiKeyInfo {
-    apiKeyInfoUser         :: Email
+data ApiKeyInfo = ApiKeyInfo
+  { apiKeyInfoUser         :: Email
   , apiKeyInfoKey          :: ApiKey
   , apiKeyInfoType         :: ApiKeyType
   , apiKeyInfoText         :: Text
@@ -857,20 +857,20 @@ data ApiKeyInfo = ApiKeyInfo {
   , apiKeyInfoCustomer     :: Maybe CustomerName
   } deriving (Eq, Show, Generic)
 
-data CreateApiKeyResp = OkCreateApiKeyResp {
-    okCreateApiKeyRespKey        :: ApiKey 
+data CreateApiKeyResp = OkCreateApiKeyResp
+  { okCreateApiKeyRespKey        :: ApiKey
   , okCreateApiKeyRespData       :: ApiKeyInfo
-  } | ErrorCreateApiKeyResp {
-    errorCreateApiKeyRespMessage :: Text
+  } | ErrorCreateApiKeyResp
+  { errorCreateApiKeyRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-data ApiKeysResp = OkApiKeysResp {
-    okApiKeysRespKeys       :: [ApiKeyInfo]
+data ApiKeysResp = OkApiKeysResp
+  { okApiKeysRespKeys       :: [ApiKeyInfo]
   , okApiKeysRespTotal      :: Int
   , okApiKeysRespTime       :: UTCTime
   , okApiKeysRespMessage    :: Maybe Text
-  } | ErrorApiKeysResp {
-    errorApiKeysRespMessage :: Text
+  } | ErrorApiKeysResp
+  { errorApiKeysRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -881,8 +881,8 @@ data ApiKeysResp = OkApiKeysResp {
 -- yay, cowboy coding
 
 -- Data needed to create a user
-data User = User {
-    userName          :: UserName
+data User = User
+  { userName          :: UserName
   , userLogin         :: Email
   , userPassword      :: Password
   , userProvider      :: Maybe Provider
@@ -911,8 +911,8 @@ data IsEmpty = Empty | Nonempty | UnknownIfEmpty
 -- The helper functions "withUserName" etc. can be used in conjunction with
 -- the default empty "UserAttr" to build up a nonempty "UserAttr".
 
-data UserAttr (u :: IsEmpty) = UserAttr {
-    userAttrName           :: Maybe UserName
+data UserAttr (u :: IsEmpty) = UserAttr
+  { userAttrName           :: Maybe UserName
   , userAttrLogin          :: Maybe Email
   , userAttrPassword       :: Maybe Password
   , userAttrProvider       :: Maybe Provider
@@ -969,8 +969,8 @@ withUserProvider      u s = u { userAttrProvider = Just s }
 withUserText          u s = u { userAttrText = Just s }
 withUserEmailVerified u b = u { userAttrEmail_verified = Just b }
 
-data UserInfo = UserInfo {
-    userInfoCreateTime     :: UTCTime
+data UserInfo = UserInfo
+  { userInfoCreateTime     :: UTCTime
   , userInfoId             :: UUID
   , userInfoName           :: UserName
   , userInfoProvider       :: Provider
@@ -982,8 +982,8 @@ data UserInfo = UserInfo {
 data RoleType = UserRoleType | AdminRoleType
  deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
 
-data ExtendedUserInfo = ExtendedUserInfo {
-    extendedUserInfoCreateTime     :: UTCTime
+data ExtendedUserInfo = ExtendedUserInfo
+  { extendedUserInfoCreateTime     :: UTCTime
   , extendedUserInfoId             :: UUID
   , extendedUserInfoName           :: UserName
   , extendedUserInfoLogin          :: Email
@@ -993,15 +993,15 @@ data ExtendedUserInfo = ExtendedUserInfo {
   , extendedUserInfoEmail_verified :: Bool
   } deriving (Show, Generic)
 
-data UserResp = OkUserResp {
-    okUserRespId   :: UUID
+data UserResp = OkUserResp
+  { okUserRespId   :: UUID
   , okUserRespUser :: UserInfo
   } | ErrorUserResp {
     errorUserRespMessage :: Text
   } deriving (Show, Generic)
 
-data UsersResp = OkUsersResp {
-    okUsersRespUsers   :: [ExtendedUserInfo]
+data UsersResp = OkUsersResp
+  { okUsersRespUsers   :: [ExtendedUserInfo]
   , okUsersRespTotal   :: Int
   , okUsersRespDomains :: [Text]       -- allowed email domains
   , okUsersRespGroups  :: [Text]       -- allowed Gitlab groups
@@ -1017,26 +1017,26 @@ data UsersResp = OkUsersResp {
 -- Customers
 --------------------------------------------------------------------------------
 
-data Customer = Customer {
-    customerCustomer :: CustomerName
+data Customer = Customer
+  { customerCustomer :: CustomerName
   , customerMatch    :: Text -- regex, apparently
   } deriving (Show, Generic)
 
-data CustomerInfo = CustomerInfo {
-    customerInfoId       :: UUID
+data CustomerInfo = CustomerInfo
+  { customerInfoId       :: UUID
   , customerInfoCustomer :: CustomerName
   , customerInfoMatch    :: Text -- regex, apparently
   } deriving (Show, Generic)
 
-data CustomerResp = OkCustomerResp {
-    okCustomerRespId         :: UUID
+data CustomerResp = OkCustomerResp
+  { okCustomerRespId         :: UUID
   , okCustomerRespCustomer   :: CustomerInfo
   } | ErrorCustomerResp {
     errorCustomerRespMessage :: Text
   } deriving (Show, Generic)
 
-data CustomersResp = OkCustomersResp {
-    okCustomersRespCustomers :: [CustomerInfo]
+data CustomersResp = OkCustomersResp
+  { okCustomersRespCustomers :: [CustomerInfo]
   , okCustomersRespTotal     :: Int
   , okCustomersRespMessage   :: Maybe Text
   , okCustomersRespTime      :: UTCTime
