@@ -1,0 +1,1 @@
+module Alerta.Golden where
