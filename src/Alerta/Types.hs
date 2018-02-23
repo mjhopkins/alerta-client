@@ -315,12 +315,12 @@ instance ToHttpApiData Status where
 instance ToJSONKey Status where
   -- toJSONKey = toJSONKeyText (T.toLower . T.pack . show)
   toJSONKey = toJSONKeyText $ \case
-    OpenStatus    -> "open"    
-    AssignStatus  -> "assign"      
-    AckStatus     -> "ack"   
-    ClosedStatus  -> "closed"      
-    ExpiredStatus -> "expired"       
-    UnknownStatus -> "unknown"       
+    OpenStatus    -> "open"
+    AssignStatus  -> "assign"
+    AckStatus     -> "ack"
+    ClosedStatus  -> "closed"
+    ExpiredStatus -> "expired"
+    UnknownStatus -> "unknown"
 
 instance FromJSONKey Status where
   fromJSONKey = FromJSONKeyTextParser $ \case
@@ -761,7 +761,6 @@ data BlackoutsResp = OkBlackoutsResp
     errorBlackoutsRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
-
 --------------------------------------------------------------------------------
 -- Heartbeats
 --------------------------------------------------------------------------------
@@ -840,14 +839,6 @@ instance ToJSON ApiKey where
 instance ToHttpApiData ApiKey where
   toUrlPiece (ApiKey k) = k
 
--- | Data needed to create an API key
-data CreateApiKey = CreateApiKey
-  { createApiKeyUser     :: Maybe Email         -- ^ only read if authorised as admin, defaults to current user
-  , createApiKeyCustomer :: Maybe CustomerName  -- ^ only read if authorised as admin, defaults to current customer
-  , createApiKeyType     :: Maybe ApiKeyType    -- ^ defaults to read-only
-  , createApiKeyText     :: Maybe Text        -- ^ defaults to "API Key for $user"
-  } deriving (Eq, Show, Generic, Default)
-
 data ApiKeyType = ReadOnly | ReadWrite deriving (Eq, Ord, Bounded, Enum, Ix, Generic)
 
 instance Show ApiKeyType where
@@ -859,6 +850,14 @@ instance ToJSON ApiKeyType where
 
 instance FromJSON ApiKeyType where
   parseJSON = genericParseJSON $ defaultOptions { constructorTagModifier = camelTo2 '-'}
+
+-- | Data needed to create an API key
+data CreateApiKey = CreateApiKey
+  { createApiKeyUser     :: Maybe Email         -- ^ only read if authorised as admin, defaults to current user
+  , createApiKeyCustomer :: Maybe CustomerName  -- ^ only read if authorised as admin, defaults to current customer
+  , createApiKeyType     :: Maybe ApiKeyType    -- ^ defaults to read-only
+  , createApiKeyText     :: Maybe Text          -- ^ defaults to "API Key for $user"
+  } deriving (Eq, Show, Generic, Default)
 
 -- | Information returned from the server about an API key
 data ApiKeyInfo = ApiKeyInfo
@@ -1068,7 +1067,7 @@ data CustomersResp = OkCustomersResp
 -- Responses
 --------------------------------------------------------------------------------
 
-data Response a = ErrorResponse !Text | OkResponse a
+data Response a = ErrorResponse !Text | OkResponse !a
   deriving (Eq, Show, Functor)
 
 instance Applicative Response where
@@ -1077,7 +1076,7 @@ instance Applicative Response where
   OkResponse f <*> r    = f <$> r
 
 instance Monad Response where
-  ErrorResponse t >>= f = ErrorResponse t
+  ErrorResponse t >>= _ = ErrorResponse t
   OkResponse a >>= f    = f a
 
 instance ToJSON a => ToJSON (Response a) where

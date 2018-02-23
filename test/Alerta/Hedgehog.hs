@@ -9,19 +9,19 @@
 module Alerta.Hedgehog where
 
 import           Alerta
-import           Control.Applicative      (liftA2, (<|>))
-import           Control.Arrow
+import           Control.Applicative      (liftA2)
+import           Control.Arrow            ((&&&))
 import           Data.Aeson               hiding (Value)
-import           Data.Aeson.Encode.Pretty
+import           Data.Aeson.Encode.Pretty (encodePretty)
 import           Data.Bifunctor           (bimap)
 import           Data.Map                 (Map)
+import           Data.Monoid              ((<>))
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Data.Time                (Day, DiffTime, UTCTime (..),
                                            fromGregorian, secondsToDiffTime)
-import           Data.Typeable
-import           Debug.Trace
-import           GHC.Exts
+import           Data.Typeable            (Typeable, tyConName, typeRep, typeRepTyCon)
+import           GHC.Exts                 (IsList(..))
 import           Hedgehog                 hiding (Group)
 import qualified Hedgehog.Gen             as Gen
 import qualified Hedgehog.Range           as Range
@@ -47,36 +47,38 @@ tests =
   , roundTrip genResp' --TODO
   , roundTrip genTrendIndication
   , roundTrip genHistoryItem
-  -- , roundTrip genExtendedHistoryItem
-  -- , roundTrip genEnvironmentInfo
-  -- , roundTrip genEnvironmentsResp
-  -- , roundTrip genServiceInfo
-  -- , roundTrip genServicesResp
-  -- , roundTrip genBlackout
-  -- , roundTrip genBlackoutInfo
-  -- , roundTrip genBlackoutStatus
-  -- , roundTrip genExtendedBlackoutInfo
-  -- , roundTrip genBlackoutResp
-  -- , roundTrip genBlackoutsResp
-  -- , roundTrip genHeartbeat
-  -- , roundTrip genHeartbeatInfo
-  -- , roundTrip genCreateHeartbeatResp
-  -- , roundTrip genHeartbeatResp
-  -- , roundTrip genHeartbeatsResp
-  -- , roundTrip genCreateApiKey
-  -- , roundTrip genApiKeyInfo
-  -- , roundTrip genCreateApiKeyResp
-  -- , roundTrip genApiKeysResp
-  -- , roundTrip genRoleType
-  -- , roundTrip genUser
-  -- , roundTrip genUserInfo
-  -- , roundTrip genExtendedUserInfo
-  -- , roundTrip genUserResp
-  -- , roundTrip genUsersResp
-  -- , roundTrip genCustomer
-  -- , roundTrip genCustomerInfo
-  -- , roundTrip genCustomerResp
-  -- , roundTrip genCustomersResp
+  , roundTrip genExtendedHistoryItem
+  , roundTrip genEnvironmentInfo
+  , roundTrip genEnvironmentsResp
+  , roundTrip genServiceInfo
+  , roundTrip genServicesResp
+  , roundTrip genBlackout
+  , roundTrip genBlackoutInfo
+  , roundTrip genBlackoutStatus
+  , roundTrip genExtendedBlackoutInfo
+  , roundTrip genBlackoutResp
+  , roundTrip genBlackoutsResp
+  , roundTrip genHeartbeat
+  , roundTrip genHeartbeatInfo
+  , roundTrip genCreateHeartbeatResp
+  , roundTrip genHeartbeatResp
+  , roundTrip genHeartbeatsResp
+  , roundTrip genApiKey
+  , roundTrip genApiKeyType
+  , roundTrip genCreateApiKey
+  , roundTrip genApiKeyInfo
+  , roundTrip genCreateApiKeyResp
+  , roundTrip genApiKeysResp
+  , roundTrip genUser
+  , roundTrip genRoleType
+  , roundTrip genUserInfo
+  , roundTrip genExtendedUserInfo
+  , roundTrip genUserResp
+  , roundTrip genUsersResp
+  , roundTrip genCustomer
+  , roundTrip genCustomerInfo
+  , roundTrip genCustomerResp
+  , roundTrip genCustomersResp
   ]
 
 genSeverity :: Gen Severity
@@ -146,11 +148,22 @@ genOrigin        :: Gen Origin
 genOrigin        = Gen.text [3..10] Gen.alphaNum
 genAlertType     :: Gen AlertType
 genAlertType     = Gen.text [3..10] Gen.alphaNum
--- genUserName      = Gen.text [3..10] Gen.alphaNum
+genUserName      :: Gen UserName
+genUserName      = Gen.text [3..10] Gen.alphaNum
 genCustomerName  :: Gen CustomerName
 genCustomerName  = Gen.text [3..10] Gen.alphaNum
 genTag           :: Gen Tag
 genTag           = Gen.text [3..10] Gen.alphaNum
+genEmail         :: Gen Tag
+genEmail         =
+  (\u d tld -> u <> "@" <> d <> "." <> tld)
+  <$> Gen.text [3..10] Gen.alphaNum
+  <*> Gen.text [2..10] Gen.alphaNum
+  <*> Gen.element ["com", "org", "net", "com.au"]
+genPassword      :: Gen Password
+genPassword      = genText
+genProvider      :: Gen Provider
+genProvider      = genText
 genRegex         :: Gen Text --TODO Regex
 genRegex         = Gen.text [3..10] Gen.alphaNum --TODO
 genHref          :: Gen Href
@@ -168,8 +181,7 @@ genDay :: Gen Day
 genDay = Gen.enum (fromGregorian 1970 1 1) (fromGregorian 2060 12 31)
 
 genDiffTime :: Gen DiffTime
-genDiffTime = secondsToDiffTime <$> Gen.integral [0..864] -- sic: inclusive because leap seconds
--- genDiffTime = secondsToDiffTime <$> Gen.integral [0..86400] -- sic: inclusive because leap seconds
+genDiffTime = secondsToDiffTime <$> Gen.integral [0..86400] -- sic: inclusive because leap seconds
 
 -- genAttributes :: Gen Attributes
 -- Attribute keys must not contain "." or "$"
@@ -177,14 +189,23 @@ genDiffTime = secondsToDiffTime <$> Gen.integral [0..864] -- sic: inclusive beca
 genAttributes :: Gen (Map Text Text)
 genAttributes = genMap [0..5] genText genText
 
+genList :: Range Int -> Gen a -> Gen [a]
+genList = Gen.list
+
+genMaybe :: Gen a -> Gen (Maybe a)
+genMaybe = Gen.maybe
+
+genInt :: Range Int -> Gen Int
+genInt = Gen.int
+
+genBool :: Gen Bool
+genBool = Gen.bool
+
 genMap :: Ord k => Range Int -> Gen k -> Gen v -> Gen (Map k v)
 genMap r k v = Gen.map r $ liftA2 (,) k v
 
 genTimeout :: Gen Int
 genTimeout = Gen.int [0..432000]
-
-genCustomer :: Gen Customer
-genCustomer = Customer <$> genCustomerName <*> genRegex
 
 genAlert :: Gen Alert
 genAlert = Alert
@@ -271,17 +292,22 @@ genExtendedHistoryItem = Gen.choice
     <*> genOrigin
     <*> genUTCTime
     <*> Gen.maybe genCustomerName
-  -- , SeverityExtendedHistoryItem
-  --   <$> genEvent
-  --   <*> genSeverity
-  --   <*> genText
-  --   <*> genUUID
-  --   <*> genUTCTime
-  --   <*> genValue
+  , SeverityExtendedHistoryItem
+      <$> genUUID
+      <*> genResource
+      <*> genEvent
+      <*> genEnvironment
+      <*> genSeverity
+      <*> genList [0..5] genService
+      <*> genGroup
+      <*> genValue
+      <*> genText
+      <*> genList [0..5] genTag
+      <*> genAttributes
+      <*> genOrigin
+      <*> genUTCTime
+      <*> genMaybe genCustomerName
   ]
-
-genApiKey :: Gen ApiKey
-genApiKey = ApiKey <$> Gen.text (Range.singleton 40) Gen.unicode
 
 genResp :: (Text -> a) -> Gen a -> Gen a
 genResp err ok = Gen.choice [ok, err <$> genText]
@@ -344,71 +370,249 @@ genAlertHistoryResp = genResp ErrorAlertHistoryResp $ OkAlertHistoryResp
   <*> genUTCTime
   <*> Gen.maybe genText
 
+genEnvironmentInfo :: Gen EnvironmentInfo
+genEnvironmentInfo = EnvironmentInfo
+    <$> genInt [0..5]
+    <*> genEnvironment
+
+genEnvironmentsResp :: Gen EnvironmentsResp
+genEnvironmentsResp = genResp ErrorEnvironmentsResp $ OkEnvironmentsResp
+  <$> genMaybe genText
+  <*> genInt [0..5]
+  <*> genList [0..5] genEnvironmentInfo
+
+genServiceInfo :: Gen ServiceInfo
+genServiceInfo = ServiceInfo
+  <$> genInt [0..5]
+  <*> genEnvironment
+  <*> genService
+
 genStatusChange :: Gen StatusChange
 genStatusChange = StatusChange
   <$> genStatus
   <*> Gen.maybe genText
 
+genServicesResp :: Gen ServicesResp
+genServicesResp = genResp ErrorServicesResp $ OkServicesResp
+  <$> genInt [0..5]
+  <*> genList [0..5] genServiceInfo
+  <*> genMaybe genText
+
+genBlackout :: Gen Blackout
+genBlackout = Blackout
+  <$> genEnvironment
+  <*> genMaybe genResource
+  <*> genMaybe genService
+  <*> genMaybe genEvent
+  <*> genMaybe genGroup
+  <*> genMaybe (genList [0..5] genTag)
+  <*> genMaybe genUTCTime
+  <*> genMaybe genUTCTime
+  <*> genMaybe (genInt [0..10])
+
+genBlackoutInfo :: Gen BlackoutInfo
+genBlackoutInfo = BlackoutInfo
+  <$> genUUID
+  <*> genInt [0..5]
+  <*> genEnvironment
+  <*> genMaybe genResource
+  <*> genMaybe (genList [0..5] genService)
+  <*> genMaybe genEvent
+  <*> genMaybe genGroup
+  <*> genMaybe (genList [0..5] genTag)
+  <*> genMaybe genCustomerName
+  <*> genUTCTime
+  <*> genUTCTime
+  <*> genInt [0..10]
+
+genBlackoutStatus :: Gen BlackoutStatus
+genBlackoutStatus = Gen.enumBounded
+
+genExtendedBlackoutInfo :: Gen ExtendedBlackoutInfo
+genExtendedBlackoutInfo = ExtendedBlackoutInfo
+  <$> genUUID
+  <*> genInt [0..6]
+  <*> genEnvironment
+  <*> genMaybe genResource
+  <*> genMaybe (genList [0..5] genService)
+  <*> genMaybe genEvent
+  <*> genMaybe genGroup
+  <*> genMaybe (genList [0..5] genTag)
+  <*> genMaybe genCustomerName
+  <*> genUTCTime
+  <*> genUTCTime
+  <*> genInt [0..5]
+  <*> genInt [0..5]
+  <*> genBlackoutStatus
+
+genBlackoutResp :: Gen BlackoutResp
+genBlackoutResp = genResp ErrorBlackoutResp $ OkBlackoutResp
+  <$> genUUID
+  <*> genBlackoutInfo
+
+genBlackoutsResp :: Gen BlackoutsResp
+genBlackoutsResp = genResp ErrorBlackoutsResp $ OkBlackoutsResp
+  <$> genInt [0..5]
+  <*> genList [0..5] genExtendedBlackoutInfo
+  <*> genMaybe genText
+  <*> genUTCTime
+
+genHeartbeat :: Gen Heartbeat
+genHeartbeat = Heartbeat
+  <$> genMaybe genOrigin
+  <*> genList [0..5] genTag
+  <*> genMaybe genUTCTime
+  <*> genMaybe (genInt [0..5])
+  <*> genMaybe genCustomerName
+
+genHeartbeatInfo :: Gen HeartbeatInfo
+genHeartbeatInfo = HeartbeatInfo
+  <$> genUTCTime
+  <*> genMaybe genCustomerName
+  <*> genHref
+  <*> genUUID
+  <*> genOrigin
+  <*> genUTCTime
+  <*> genList [0..5] genTag
+  <*> genInt [0..5]
+  <*> genText
+
+genCreateHeartbeatResp :: Gen CreateHeartbeatResp
+genCreateHeartbeatResp = genResp ErrorCreateHeartbeatResp $ OkCreateHeartbeatResp
+  <$> genUUID
+  <*> genHeartbeatInfo
+
+genHeartbeatResp :: Gen HeartbeatResp
+genHeartbeatResp = genResp ErrorHeartbeatResp $ OkHeartbeatResp
+  <$> genHeartbeatInfo
+  <*> genInt [0..5]
+
+genHeartbeatsResp :: Gen HeartbeatsResp
+genHeartbeatsResp = genResp ErrorHeartbeatsResp $ OkHeartbeatsResp
+  <$> genList [0..5] genHeartbeatInfo
+  <*> genMaybe genUTCTime
+  <*> genInt [0..5]
+  <*> genMaybe genText
+
+genApiKey :: Gen ApiKey
+genApiKey = ApiKey <$> Gen.text (Range.singleton 40) Gen.unicode
+
+genApiKeyType :: Gen ApiKeyType
+genApiKeyType = Gen.enumBounded
+
+genCreateApiKey :: Gen CreateApiKey
+genCreateApiKey = CreateApiKey
+  <$> genMaybe genEmail
+  <*> genMaybe genCustomerName
+  <*> genMaybe genApiKeyType
+  <*> genMaybe genText
+
+genApiKeyInfo :: Gen ApiKeyInfo
+genApiKeyInfo = ApiKeyInfo
+  <$> genEmail
+  <*> genApiKey
+  <*> genApiKeyType
+  <*> genText
+  <*> genUTCTime
+  <*> genInt [0..5]
+  <*> genMaybe genUTCTime
+  <*> genMaybe genCustomerName
+
+genCreateApiKeyResp :: Gen CreateApiKeyResp
+genCreateApiKeyResp = genResp ErrorCreateApiKeyResp $ OkCreateApiKeyResp
+  <$> genApiKey
+  <*> genApiKeyInfo
+
+genApiKeysResp :: Gen ApiKeysResp
+genApiKeysResp = genResp ErrorApiKeysResp $ OkApiKeysResp
+  <$> genList [0..5] genApiKeyInfo
+  <*> genInt [0..5]
+  <*> genUTCTime
+  <*> genMaybe genText
+
+genUser :: Gen User
+genUser = User
+  <$> genUserName
+  <*> genEmail
+  <*> genPassword
+  <*> genMaybe genProvider
+  <*> genMaybe genText
+  <*> genMaybe genBool
+
+genRoleType :: Gen RoleType
+genRoleType = Gen.enumBounded
+
+genUserInfo :: Gen UserInfo
+genUserInfo = UserInfo
+  <$> genUTCTime
+  <*> genUUID
+  <*> genUserName
+  <*> genProvider
+  <*> genEmail
+  <*> genText
+  <*> genBool
+
+genExtendedUserInfo :: Gen ExtendedUserInfo
+genExtendedUserInfo = ExtendedUserInfo
+  <$> genUTCTime
+  <*> genUUID
+  <*> genUserName
+  <*> genEmail
+  <*> genProvider
+  <*> genRoleType
+  <*> genText
+  <*> genBool
+
+genUserResp :: Gen UserResp
+genUserResp = genResp ErrorUserResp $ OkUserResp
+  <$> genUUID
+  <*> genUserInfo
+
+genUsersResp :: Gen UsersResp
+genUsersResp = genResp ErrorUsersResp $ OkUsersResp
+  <$> genList [0..5] genExtendedUserInfo
+  <*> genInt [0..5]
+  <*> genList [0..5] genText
+  <*> genList [0..5] genText
+  <*> genList [0..5] genText
+  <*> genMaybe (genList [0..5] genText)
+  <*> genUTCTime
+  <*> genMaybe genText
+
+genCustomer :: Gen Customer
+genCustomer = Customer
+  <$> genCustomerName
+  <*> genRegex
+
+genCustomerInfo :: Gen CustomerInfo
+genCustomerInfo = CustomerInfo
+  <$> genUUID
+  <*> genCustomerName
+  <*> genRegex
+
+genCustomerResp :: Gen CustomerResp
+genCustomerResp = genResp ErrorCustomerResp $ OkCustomerResp
+  <$> genUUID
+  <*> genCustomerInfo
+
+genCustomersResp :: Gen CustomersResp
+genCustomersResp = genResp ErrorCustomersResp $ OkCustomersResp
+  <$> genList [0..5] genCustomerInfo
+  <*> genInt [0..5]
+  <*> genMaybe genText
+  <*> genUTCTime
+
 genResp' :: Gen Resp
 genResp' = genResp ErrorResp $ pure OkResp
 
-{-
-Severity
-Status
-Alert
-Tags
-Attributes
-AlertAttr
-AlertInfo
-CreateAlertResp
-AlertResp
-AlertsResp
-ResourceInfo
-Top10Info
-Top10Resp
-AlertCountResp
-AlertHistoryResp
-StatusChange
-Resp
-TrendIndication
-HistoryItem
-ExtendedHistoryItem
-EnvironmentInfo
-EnvironmentsResp
-ServiceInfo
-ServicesResp
-Blackout
-BlackoutInfo
-BlackoutStatus
-ExtendedBlackoutInfo
-BlackoutResp
-BlackoutsResp
-Heartbeat
-HeartbeatInfo
-CreateHeartbeatResp
-HeartbeatResp
-HeartbeatsResp
-CreateApiKey
-ApiKeyInfo
-CreateApiKeyResp
-ApiKeysResp
-RoleType
-User
-UserInfo
-ExtendedUserInfo
-UserResp
-UsersResp
-Customer
-CustomerInfo
-CustomerResp
-CustomersResp
--}
-
 roundTrip :: (Typeable a, Show a, Eq a, FromJSON a, ToJSON a) => Gen a -> (TestName, Property)
-roundTrip gen = (typeName gen ++ " round-trip", property (prop_trip gen))
+roundTrip = mkTest prop_trip (++ " round-trip")
 
 roundTripKey :: (Typeable k, Show k, Ord k, ToJSONKey k, FromJSONKey k) => Gen k -> (TestName, Property)
-roundTripKey gen = (typeName gen ++ " key round-trip", property (prop_tripKey gen))
+roundTripKey = mkTest prop_tripKey (++ " key round-trip")
+
+mkTest :: Typeable a => (p a -> PropertyT IO ()) -> (String -> String) -> p a -> (TestName, Property)
+mkTest prop mkTestName = mkTestName . typeName &&& property . prop
 
 typeName :: Typeable a => p a -> String
 typeName = tyConName . typeRepTyCon . typeRep
@@ -462,25 +666,3 @@ replace assocs s = T.unpack $ foldr replace' (T.pack s) assocs'
     assocs'   = map (bimap T.pack T.pack) assocs
     replace' :: (Text, Text) -> Text -> Text
     replace' (a,b) = T.replace a b
-
-
-{-
-OkAlertsResp
-    { okAlertsRespAlerts = []
-    , okAlertsRespTotal = 0
-    , okAlertsRespPage = 0
-    , okAlertsRespPageSize = 0
-    , okAlertsRespPages = 0
-    , okAlertsRespMore = False
-    , okAlertsRespSeverityCounts = Nothing
-    , okAlertsRespStatusCounts = Just (fromList [ ( OpenStatus , 0 ) ])
-    , okAlertsRespLastTime = 1970 (-01) (-01) 00 : 00 : 00 UTC
-    , okAlertsRespAutoRefresh = False
-    , okAlertsRespMessage = Nothing
-    }
--}
-
--- newtype Time = Time UTCTime
-
--- instance Show Time where
---   show (T)
