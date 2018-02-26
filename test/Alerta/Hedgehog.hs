@@ -9,22 +9,26 @@
 module Alerta.Hedgehog where
 
 import           Alerta
-import           Control.Applicative      (liftA2)
-import           Control.Arrow            ((&&&))
-import           Data.Aeson               hiding (Value)
-import           Data.Aeson.Encode.Pretty (encodePretty)
-import           Data.Bifunctor           (bimap)
-import           Data.Map                 (Map)
-import           Data.Monoid              ((<>))
-import           Data.Text                (Text)
-import qualified Data.Text                as T
-import           Data.Time                (Day, DiffTime, UTCTime (..),
-                                           fromGregorian, secondsToDiffTime)
-import           Data.Typeable            (Typeable, tyConName, typeRep, typeRepTyCon)
-import           GHC.Exts                 (IsList(..))
-import           Hedgehog                 hiding (Group)
-import qualified Hedgehog.Gen             as Gen
-import qualified Hedgehog.Range           as Range
+import           Control.Applicative        (liftA2)
+import           Control.Arrow              ((&&&))
+import           Data.Aeson                 hiding (Value)
+import           Data.Aeson.Encode.Pretty   (encodePretty)
+import           Data.Bifunctor             (bimap)
+import           Data.Map                   (Map)
+import           Data.Monoid                ((<>))
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
+import           Data.Time                  (Day, DiffTime, UTCTime (..),
+                                             fromGregorian, secondsToDiffTime)
+import           Data.Typeable              (Typeable, tyConName, typeRep,
+                                             typeRepTyCon)
+import           GHC.Exts                   (IsList (..))
+import           Hedgehog                   hiding (Group)
+import qualified Hedgehog.Gen               as Gen
+import           Hedgehog.Internal.Property (Diff (..), failWith)
+import           Hedgehog.Internal.Show     (mkValue, showPretty, valueDiff)
+import           Hedgehog.Internal.Source   (HasCallStack, withFrozenCallStack)
+import qualified Hedgehog.Range             as Range
 
 type TestName = String
 
@@ -79,7 +83,23 @@ tests =
   , roundTrip genCustomerInfo
   , roundTrip genCustomerResp
   , roundTrip genCustomersResp
+  , compat genUserResp genRespUserResp responseUserRespToUserResp
+  , compat genRespUserResp genUserResp userRespToResponseUserResp
   ]
+
+userRespToResponseUserResp :: UserResp -> Response UserResp'
+userRespToResponseUserResp (ErrorUserResp t) = (ErrorResponse t)
+userRespToResponseUserResp (OkUserResp i u)  = (OkResponse (UserResp' i u))
+
+responseUserRespToUserResp :: Response UserResp' -> UserResp
+responseUserRespToUserResp (ErrorResponse t)            = ErrorUserResp t
+responseUserRespToUserResp (OkResponse (UserResp' i u)) = OkUserResp i u
+
+genRespUserResp :: Gen (Response UserResp')
+genRespUserResp = genResponse genUserResp'
+
+genResponse gen = Gen.choice
+  [ OkResponse <$> gen, ErrorResponse <$> genText ]
 
 genSeverity :: Gen Severity
 genSeverity = Gen.enumBounded
@@ -90,46 +110,6 @@ genStatus = Gen.enumBounded
 genTrendIndication :: Gen TrendIndication
 genTrendIndication = Gen.enumBounded
 
-
--- rtK :: forall a m. (ToJSONKey a, FromJSONKey a, Eq a, Monad m) => a -> m _
--- rtK :: forall (f :: * -> *) (m :: * -> *) a.
---   ( Applicative f
---   , Eq (f a)
---   , Show (f a)
---   , Show a
---   , ToJSONKey a
---   , FromJSONKey (f a), Monad m
---   ) => Gen a -> PropertyT m ()
--- rtK gen = do
---   a <- forAll gen
---   -- t <- return $ case toJSONKey of
---   --   ToJSONKeyText f _  -> Left $ f
---   --   ToJSONKeyValue f _ -> Right $ f
---   case fromJSONKey :: FromJSONKeyFunction a of
---     -- FromJSONKeyCoerce !(aeson-1.1.2.0:Data.Aeson.Types.FromJSON.CoerceText a)
---         FromJSONKeyText f ->
---           case toJSONKey :: ToJSONKeyFunction a of
---             ToJSONKeyText t _  -> tripping a t f
---             -- ToJSONKeyValue t _ -> Right $ f
-
-    -- FromJSONKeyTextParser !(Text -> aeson-1.1.2.0:Data.Aeson.Types.Internal.Parser a)
-    -- FromJSONKeyValue !(Aeson.Value -> aeson-1.1.2.0:Data.Aeson.Types.Internal.Parser a)
-
-  -- return $ _
-{-
-  FromJSONKeyCoerce !(aeson-1.1.2.0:Data.Aeson.Types.FromJSON.CoerceText a)
-  | FromJSONKeyText !(Text -> a)
-  | FromJSONKeyTextParser !(Text -> aeson-1.1.2.0:Data.Aeson.Types.Internal.Parser a)
-  | FromJSONKeyValue !(Aeson.Value -> aeson-1.1.2.0:Data.Aeson.Types.Internal.Parser a)
--}
-
--- Email
--- Password
--- Provider
--- ShouldReverse
--- Limit
--- PageNo
--- UUID
 genResource      :: Gen Resource
 genResource      = Gen.text [3..10] Gen.alphaNum
 genEvent         :: Gen Event
@@ -568,6 +548,11 @@ genUserResp = genResp ErrorUserResp $ OkUserResp
   <$> genUUID
   <*> genUserInfo
 
+genUserResp' :: Gen UserResp'
+genUserResp' = UserResp'
+  <$> genUUID
+  <*> genUserInfo
+
 genUsersResp :: Gen UsersResp
 genUsersResp = genResp ErrorUsersResp $ OkUsersResp
   <$> genList [0..5] genExtendedUserInfo
@@ -605,14 +590,39 @@ genCustomersResp = genResp ErrorCustomersResp $ OkCustomersResp
 genResp' :: Gen Resp
 genResp' = genResp ErrorResp $ pure OkResp
 
-roundTrip :: (Typeable a, Show a, Eq a, FromJSON a, ToJSON a) => Gen a -> (TestName, Property)
-roundTrip = mkTest prop_trip (++ " round-trip")
+roundTrip ::
+  ( Typeable a
+  , ToJSON a
+  , FromJSON a
+  , Eq a
+  , Show a
+  ) => Gen a -> (TestName, Property)
+roundTrip = mkTest (++ " round-trip") prop_trip
 
-roundTripKey :: (Typeable k, Show k, Ord k, ToJSONKey k, FromJSONKey k) => Gen k -> (TestName, Property)
-roundTripKey = mkTest prop_tripKey (++ " key round-trip")
+roundTripKey ::
+  ( Typeable k
+  , ToJSONKey k
+  , FromJSONKey k
+  , Ord k
+  , Show k
+  ) => Gen k -> (TestName, Property)
+roundTripKey = mkTest (++ " key round-trip") prop_tripKey
 
-mkTest :: Typeable a => (p a -> PropertyT IO ()) -> (String -> String) -> p a -> (TestName, Property)
-mkTest prop mkTestName = mkTestName . typeName &&& property . prop
+compat ::
+  ( Typeable a
+  , Typeable b
+  , ToJSON a
+  , FromJSON b
+  , Eq a
+  , Show a
+  ) => Gen a -> Gen b -> (b -> a) -> (TestName, Property)
+compat gena genb f =
+  ( "Compatibility between "  ++ typeName gena ++ " and " ++ typeName genb
+  , property (prop_compat gena genb f)
+  )
+
+mkTest :: Typeable a => (String -> String) -> (p a -> PropertyT IO ()) -> p a -> (TestName, Property)
+mkTest mkTestName prop = mkTestName . typeName &&& property . prop
 
 typeName :: Typeable a => p a -> String
 typeName = tyConName . typeRepTyCon . typeRep
@@ -644,6 +654,17 @@ prop_tripKey gen = do
   let g = genMap [0, 10] gen (Gen.int [0..5])
   m <- forAll g
   tripping m encode decode
+
+prop_compat ::
+  ( ToJSON a
+  , FromJSON b
+  , Eq a
+  , Show a
+  , Monad m
+  ) => Gen a -> Gen b -> (b -> a) -> PropertyT m ()
+prop_compat gen1 gen2 f = do
+  a <- forAll gen1
+  tripping a encode (fmap f . decode)
 
 instance Integral t => IsList (Range t) where
   type Item (Range t) = t
