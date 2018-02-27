@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedLists     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Alerta.Hedgehog where
 
@@ -12,8 +14,7 @@ import           Data.Aeson.Encode.Pretty (encodePretty)
 import           Data.Bifunctor           (bimap)
 import           Data.Text                (Text)
 import qualified Data.Text                as T
-import           Data.Typeable            (Typeable, tyConName, typeRep,
-                                           typeRepTyCon)
+import           Data.Typeable            (Typeable)
 import           Hedgehog                 (Gen, Property, PropertyT, forAll,
                                            property, tripping)
 import qualified Hedgehog.Gen             as Gen
