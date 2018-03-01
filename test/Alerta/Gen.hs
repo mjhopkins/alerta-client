@@ -14,10 +14,13 @@ import           Data.Text           (Text)
 import qualified Data.Text           as T
 import           Data.Time           (Day, DiffTime, UTCTime (..),
                                       fromGregorian, secondsToDiffTime)
+import           Data.Typeable       (Typeable, tyConName, typeRep,
+                                      typeRepTyCon)
 import           GHC.Exts            (IsList (..))
 import           Hedgehog            (Gen, Range)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
+
 
 genRespUserResp :: Gen (Response UserResp')
 genRespUserResp = genResponse genUserResp'
@@ -515,7 +518,9 @@ genCustomersResp = genResp ErrorCustomersResp $ OkCustomersResp
 genResp' :: Gen Resp
 genResp' = genResp ErrorResp $ pure OkResp
 
-
+--------------------------------------------------------------------------------
+-- Utils
+--------------------------------------------------------------------------------
 
 instance Integral t => IsList (Range t) where
   type Item (Range t) = t
@@ -524,3 +529,7 @@ instance Integral t => IsList (Range t) where
   fromList l   = Range.linear (head l) (last l)
 
   toList = error "can't turn a range into a list"
+
+
+typeName :: Typeable a => p a -> String
+typeName = tyConName . typeRepTyCon . typeRep

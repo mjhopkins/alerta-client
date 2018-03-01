@@ -4,7 +4,6 @@
 module Alerta.Golden where
 
 import           Alerta.Gen
-import           Alerta.Hedgehog             (typeName)
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
 import           Control.Monad.Trans.Maybe   (runMaybeT)
 import           Data.Aeson                  (FromJSON, ToJSON,
