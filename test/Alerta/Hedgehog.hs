@@ -118,9 +118,6 @@ compat gena genb f =
 mkTest :: Typeable a => (String -> String) -> (p a -> PropertyT IO ()) -> p a -> (TestName, Property)
 mkTest mkTestName prop = mkTestName . typeName &&& property . prop
 
-typeName :: Typeable a => p a -> String
-typeName = tyConName . typeRepTyCon . typeRep
-
 prop_trip ::
   ( ToJSON a
   , FromJSON a
