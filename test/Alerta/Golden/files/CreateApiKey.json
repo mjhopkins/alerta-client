@@ -1,1 +1,59 @@
-[{"user":"b5D@ak.com.au","text":"mKQ"},{"user":"DBZ@HF.com","customer":"TXa","type":"read-write","text":"McX"},{"user":"eML@N4.com","customer":"T9g","type":"read-only","text":"wz6"},{"user":"CpE@8b.com.au","customer":"IrM","type":"read-only","text":"TSW"},{"user":"IxI@AR.com","customer":"MXY","type":"read-only","text":"mkf"},{"user":"bB1@X4.com.au","customer":"6s2","type":"read-only","text":"xJI"},{"user":"87l@Km.com","customer":"7Ro","type":"read-write","text":"XAr"},{"user":"ZEI@C4.net","type":"read-write","text":"qHd"},{"user":"kNG@TU.com","customer":"Rfd","type":"read-only","text":"RSc"},{"user":"C8P@al.net","customer":"xcN","type":"read-write","text":"kdk"}]
+[
+  {
+    "text": "mKQ",
+    "user": "b5D@ak.com.au"
+  },
+  {
+    "customer": "TXa",
+    "text": "McX",
+    "type": "read-write",
+    "user": "DBZ@HF.com"
+  },
+  {
+    "customer": "T9g",
+    "text": "wz6",
+    "type": "read-only",
+    "user": "eML@N4.com"
+  },
+  {
+    "customer": "IrM",
+    "text": "TSW",
+    "type": "read-only",
+    "user": "CpE@8b.com.au"
+  },
+  {
+    "customer": "MXY",
+    "text": "mkf",
+    "type": "read-only",
+    "user": "IxI@AR.com"
+  },
+  {
+    "customer": "6s2",
+    "text": "xJI",
+    "type": "read-only",
+    "user": "bB1@X4.com.au"
+  },
+  {
+    "customer": "7Ro",
+    "text": "XAr",
+    "type": "read-write",
+    "user": "87l@Km.com"
+  },
+  {
+    "text": "qHd",
+    "type": "read-write",
+    "user": "ZEI@C4.net"
+  },
+  {
+    "customer": "Rfd",
+    "text": "RSc",
+    "type": "read-only",
+    "user": "kNG@TU.com"
+  },
+  {
+    "customer": "xcN",
+    "text": "kdk",
+    "type": "read-write",
+    "user": "C8P@al.net"
+  }
+]

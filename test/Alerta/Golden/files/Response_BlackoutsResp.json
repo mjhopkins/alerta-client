@@ -1,1 +1,432 @@
-[{"status":"ok","message":"MGKSMBBV","total":2,"blackouts":[],"time":"2027-10-07T20:47:43Z"},{"status":"ok","message":"z4eoQ5","total":5,"blackouts":[{"resource":"ikfXLX","service":[],"event":"Eve","group":"f6V","tags":["9iVS","58qFfA","Exxti3u7lP","pawnhi57"],"customer":"sylq","id":"IbH4L`AK-dEW3-C<;3-ScO;-_?RfJR1<\\bBT","priority":0,"environment":"NY3Am5fosm","startTime":"2058-03-04T23:34:11Z","endTime":"2053-05-08T07:46:31Z","duration":3,"remaining":1,"status":"active"}],"time":"1983-04-13T15:57:34Z"},{"status":"ok","message":"e8Ut","total":2,"blackouts":[{"resource":"RbR32w","service":["kM3k9imrhu"],"event":"EYnmz","group":"MmvycPp","tags":["dDHAvgA","lKgQ","3IyEkk","Ukhi","6bpxZdvSgy"],"customer":"SVuMe","id":"34\\RRJS?-DQ?^-^N0O-ZM8]-f8P:;ZF]\\A<R","priority":4,"environment":"H7WN","startTime":"2033-01-14T15:51:34Z","endTime":"2031-07-27T15:25:02Z","duration":1,"remaining":0,"status":"pending"},{"resource":"g9lT","service":["1RHzzOQI","b4enLTK","eaY4XiGhA","smv","lD4I"],"event":"yeua","group":"8LnBnI","tags":["t0JzfM9I","RuqAITI","Qr9","WY6DK"],"customer":"SW69fWAXry","id":"C?3NZ\\L3-Le`c-ITIF-Mb5e->1OMZW0J4X3D","priority":0,"environment":"nTC4sk8N","startTime":"2021-10-04T02:39:10Z","endTime":"1994-08-12T07:24:05Z","duration":2,"remaining":2,"status":"pending"}],"time":"1988-05-14T00:54:42Z"},{"status":"ok","message":"EvorCsc8ux","total":1,"blackouts":[{"resource":"5SzQ3","service":[],"event":"VyVmhEP","group":"RXOp","tags":["9ktMwwRF2","qdFvlUEH"],"customer":"H0ZPG69bt","id":"ee_XC;J8-\\Q<d-^GSZ-b;JS-<<1_[U8RFX6e","priority":4,"environment":"0UvYyNm","startTime":"2059-06-06T03:21:31Z","endTime":"1979-08-08T22:44:18Z","duration":2,"remaining":3,"status":"active"},{"resource":"eXbqM","service":["HKvWQvp","Z0cpUBMy50"],"event":"7f0vhc9El","group":"VY6LxW","tags":["UM3uOGu"],"customer":"oSZoCSClwO","id":"\\TVaM4Gc-Z^TD-Q44J-UBM]-^<?<DE>4]?Sb","priority":0,"environment":"3r1mSwuP","startTime":"1991-11-22T22:52:33Z","endTime":"2021-12-09T17:12:24Z","duration":5,"remaining":5,"status":"pending"},{"resource":"G1lIg","service":["YBMHG8","Nm8","aGkEPGgy","IEbs6","U8aR4rz9s"],"event":"P92p","group":"KUr0Vzf","tags":["qJk","LzBvN8SWX","E5s6IQ2y9y","MK1eh"],"customer":"lgz","id":"RSI1MU2[-^09N-=YA2->PL9-]XIC<::E<VRf","priority":0,"environment":"km13u6Q4Fx","startTime":"1986-07-13T08:06:44Z","endTime":"2004-06-14T20:14:32Z","duration":5,"remaining":5,"status":"pending"},{"resource":"T0F7","service":["6Z1EDTV","INQcNG","sCa","Z9Daavr","y6QF2"],"event":"XTLVwf","group":"XKAcfSH9","tags":["Du5kY3wQ","vifqn"],"customer":"JHPv6","id":"[5VQ1<L4-F3Sc-NEKS-][M3-?U[W=>GNQW3`","priority":1,"environment":"6h1r2eMbsS","startTime":"2038-10-16T10:38:44Z","endTime":"1976-08-12T15:56:54Z","duration":5,"remaining":5,"status":"expired"},{"resource":"bKM2b","service":["zC893fPr","ssJz"],"event":"9LPK9JgeU","group":"6kXxU","customer":"Q3D99E","id":">G_?1@Na-E1YX-H@K5-]8eN-RZM:4?H]QQZ2","priority":0,"environment":"BwgfBtpXo","startTime":"1991-07-28T22:56:45Z","endTime":"2060-04-15T06:05:22Z","duration":5,"remaining":5,"status":"pending"}],"time":"1972-04-16T01:47:13Z"},{"status":"ok","message":"75zx0V","total":1,"blackouts":[{"resource":"qFukMV","service":["JEz6Hrx9q"],"event":"FFR8oIgV","group":"4hV9i","tags":["xEU"],"customer":"5eNrCb","id":"K2SFbP;N-@R;[-T@31-51\\\\-I6ZM<dA7GeTP","priority":0,"environment":"8hHJ9yXREv","startTime":"2039-05-13T04:41:12Z","endTime":"2035-12-29T14:49:23Z","duration":4,"remaining":0,"status":"pending"},{"resource":"Joq","service":["fgGhzzbhz","JSYdiUs","FJ2WxRS4","s2PD7IR91","fI9io"],"event":"E6YL7KVqP","group":"U1Bgu1n","tags":["QlDcJG","OLq0","TPzSPPKJSg","wnmNZg","7QDv"],"customer":"IOm4hh6","id":"`267=L]V-P6:0-4_VF-4:5M-3810\\`OF0>>V","priority":4,"environment":"ENs2KJ","startTime":"2008-06-08T18:28:23Z","endTime":"1975-09-29T01:44:47Z","duration":1,"remaining":2,"status":"active"},{"resource":"w5LFIIEz","service":["9pCRDrnJy","wmy27ON","w2XyDs"],"event":"lOpMBfMeuw","group":"5z3JNpm","tags":["ChxK2","HzK3OtN2ds","ZlYeOKe9f"],"customer":"5gqvDewkK","id":"<XLLf:E1-5D>4->WTS-e=N?-_ERX_a90]W7\\","priority":1,"environment":"N5PaxfphRN","startTime":"2022-07-24T21:58:11Z","endTime":"1979-11-17T04:37:45Z","duration":4,"remaining":1,"status":"pending"},{"resource":"MPWknGMMll","service":[],"event":"VBMhfY8D9X","group":"ViW0hhwn","tags":[],"customer":"ZAJIXx","id":"VcO6`b:C-^[>:-EJJS-C?=0-bUUQID>]Q5HA","priority":5,"environment":"LfBopVg","startTime":"2051-08-04T10:53:48Z","endTime":"2035-01-06T17:48:47Z","duration":0,"remaining":1,"status":"active"}],"time":"2018-01-19T07:08:50Z"},{"status":"ok","message":"uR4PVI","total":1,"blackouts":[{"resource":"MU0LAQ4e","service":["RKLp"],"event":"PAmh4kd","group":"wpAqQ","tags":["9cNUBtrob","5Uw404","MBG"],"customer":"y8cVg40bQ","id":"GL8SE1_`-QaON-KZBF-fZVW-_`LWN9M8GE3J","priority":2,"environment":"IHK","startTime":"1976-01-01T00:04:53Z","endTime":"2018-06-10T10:22:27Z","duration":3,"remaining":0,"status":"expired"},{"resource":"vxSxIqxAtQ","service":["1K5JM","6gndWd8r"],"event":"dwzD","group":"4osvEwbMDq","tags":["LVCyuwFJZk","WTwZBbyI6","2iAIuvLZ","xhMYpU0VR"],"customer":"rAoLq4tkp","id":"BH5BKKeJ-W@>b-^P]L-K>AZ-JMff1`Kc2a=S","priority":0,"environment":"tD5l","startTime":"2009-12-03T12:51:16Z","endTime":"1987-10-23T08:34:54Z","duration":3,"remaining":5,"status":"expired"},{"resource":"bsRdacq","service":["ozHFWrA","VG5X","JUwkwBU"],"event":"szTD","group":"Megd","tags":["o7sxD2V","sB3SB0DFm8"],"customer":"T36PReP","id":"[;]0`BC[-SIEA-<OY6-BUA8-DA<<LJBANbHZ","priority":6,"environment":"CPiiWbt34C","startTime":"1976-04-30T14:30:07Z","endTime":"2056-06-16T14:09:06Z","duration":1,"remaining":4,"status":"active"}],"time":"2040-04-27T10:17:41Z"},{"status":"error","message":"L64"},{"status":"error","message":"1kXUu9UKX"},{"status":"error","message":"8KqkUD1z"},{"status":"ok","message":"FXBkZY","total":3,"blackouts":[{"resource":"wUlq","service":["szCae39D","T1PCKWdh"],"event":"uPBd7","group":"fWDPm78","tags":["edmfcy9WGp","uolsPlq","Ua6v2","BdysR"],"customer":"rR6Fh5","id":">c2Q@?HC-N?G0-5DDV-EYNZ-T6^0>Qd4Q?EA","priority":5,"environment":"KUB6","startTime":"2007-09-23T20:47:16Z","endTime":"2028-08-08T11:56:59Z","duration":2,"remaining":0,"status":"pending"}],"time":"2016-03-15T21:34:45Z"}]
+[
+  {
+    "status": "ok",
+    "message": "MGKSMBBV",
+    "total": 2,
+    "blackouts": [],
+    "time": "2027-10-07T20:47:43Z"
+  },
+  {
+    "status": "ok",
+    "message": "z4eoQ5",
+    "total": 5,
+    "blackouts": [
+      {
+        "status": "active",
+        "customer": "sylq",
+        "duration": 3,
+        "endTime": "2053-05-08T07:46:31Z",
+        "environment": "NY3Am5fosm",
+        "event": "Eve",
+        "group": "f6V",
+        "id": "IbH4L`AK-dEW3-C<;3-ScO;-_?RfJR1<\\bBT",
+        "priority": 0,
+        "remaining": 1,
+        "resource": "ikfXLX",
+        "service": [],
+        "startTime": "2058-03-04T23:34:11Z",
+        "tags": [
+          "9iVS",
+          "58qFfA",
+          "Exxti3u7lP",
+          "pawnhi57"
+        ]
+      }
+    ],
+    "time": "1983-04-13T15:57:34Z"
+  },
+  {
+    "status": "ok",
+    "message": "e8Ut",
+    "total": 2,
+    "blackouts": [
+      {
+        "status": "pending",
+        "customer": "SVuMe",
+        "duration": 1,
+        "endTime": "2031-07-27T15:25:02Z",
+        "environment": "H7WN",
+        "event": "EYnmz",
+        "group": "MmvycPp",
+        "id": "34\\RRJS?-DQ?^-^N0O-ZM8]-f8P:;ZF]\\A<R",
+        "priority": 4,
+        "remaining": 0,
+        "resource": "RbR32w",
+        "service": [
+          "kM3k9imrhu"
+        ],
+        "startTime": "2033-01-14T15:51:34Z",
+        "tags": [
+          "dDHAvgA",
+          "lKgQ",
+          "3IyEkk",
+          "Ukhi",
+          "6bpxZdvSgy"
+        ]
+      },
+      {
+        "status": "pending",
+        "customer": "SW69fWAXry",
+        "duration": 2,
+        "endTime": "1994-08-12T07:24:05Z",
+        "environment": "nTC4sk8N",
+        "event": "yeua",
+        "group": "8LnBnI",
+        "id": "C?3NZ\\L3-Le`c-ITIF-Mb5e->1OMZW0J4X3D",
+        "priority": 0,
+        "remaining": 2,
+        "resource": "g9lT",
+        "service": [
+          "1RHzzOQI",
+          "b4enLTK",
+          "eaY4XiGhA",
+          "smv",
+          "lD4I"
+        ],
+        "startTime": "2021-10-04T02:39:10Z",
+        "tags": [
+          "t0JzfM9I",
+          "RuqAITI",
+          "Qr9",
+          "WY6DK"
+        ]
+      }
+    ],
+    "time": "1988-05-14T00:54:42Z"
+  },
+  {
+    "status": "ok",
+    "message": "EvorCsc8ux",
+    "total": 1,
+    "blackouts": [
+      {
+        "status": "active",
+        "customer": "H0ZPG69bt",
+        "duration": 2,
+        "endTime": "1979-08-08T22:44:18Z",
+        "environment": "0UvYyNm",
+        "event": "VyVmhEP",
+        "group": "RXOp",
+        "id": "ee_XC;J8-\\Q<d-^GSZ-b;JS-<<1_[U8RFX6e",
+        "priority": 4,
+        "remaining": 3,
+        "resource": "5SzQ3",
+        "service": [],
+        "startTime": "2059-06-06T03:21:31Z",
+        "tags": [
+          "9ktMwwRF2",
+          "qdFvlUEH"
+        ]
+      },
+      {
+        "status": "pending",
+        "customer": "oSZoCSClwO",
+        "duration": 5,
+        "endTime": "2021-12-09T17:12:24Z",
+        "environment": "3r1mSwuP",
+        "event": "7f0vhc9El",
+        "group": "VY6LxW",
+        "id": "\\TVaM4Gc-Z^TD-Q44J-UBM]-^<?<DE>4]?Sb",
+        "priority": 0,
+        "remaining": 5,
+        "resource": "eXbqM",
+        "service": [
+          "HKvWQvp",
+          "Z0cpUBMy50"
+        ],
+        "startTime": "1991-11-22T22:52:33Z",
+        "tags": [
+          "UM3uOGu"
+        ]
+      },
+      {
+        "status": "pending",
+        "customer": "lgz",
+        "duration": 5,
+        "endTime": "2004-06-14T20:14:32Z",
+        "environment": "km13u6Q4Fx",
+        "event": "P92p",
+        "group": "KUr0Vzf",
+        "id": "RSI1MU2[-^09N-=YA2->PL9-]XIC<::E<VRf",
+        "priority": 0,
+        "remaining": 5,
+        "resource": "G1lIg",
+        "service": [
+          "YBMHG8",
+          "Nm8",
+          "aGkEPGgy",
+          "IEbs6",
+          "U8aR4rz9s"
+        ],
+        "startTime": "1986-07-13T08:06:44Z",
+        "tags": [
+          "qJk",
+          "LzBvN8SWX",
+          "E5s6IQ2y9y",
+          "MK1eh"
+        ]
+      },
+      {
+        "status": "expired",
+        "customer": "JHPv6",
+        "duration": 5,
+        "endTime": "1976-08-12T15:56:54Z",
+        "environment": "6h1r2eMbsS",
+        "event": "XTLVwf",
+        "group": "XKAcfSH9",
+        "id": "[5VQ1<L4-F3Sc-NEKS-][M3-?U[W=>GNQW3`",
+        "priority": 1,
+        "remaining": 5,
+        "resource": "T0F7",
+        "service": [
+          "6Z1EDTV",
+          "INQcNG",
+          "sCa",
+          "Z9Daavr",
+          "y6QF2"
+        ],
+        "startTime": "2038-10-16T10:38:44Z",
+        "tags": [
+          "Du5kY3wQ",
+          "vifqn"
+        ]
+      },
+      {
+        "status": "pending",
+        "customer": "Q3D99E",
+        "duration": 5,
+        "endTime": "2060-04-15T06:05:22Z",
+        "environment": "BwgfBtpXo",
+        "event": "9LPK9JgeU",
+        "group": "6kXxU",
+        "id": ">G_?1@Na-E1YX-H@K5-]8eN-RZM:4?H]QQZ2",
+        "priority": 0,
+        "remaining": 5,
+        "resource": "bKM2b",
+        "service": [
+          "zC893fPr",
+          "ssJz"
+        ],
+        "startTime": "1991-07-28T22:56:45Z"
+      }
+    ],
+    "time": "1972-04-16T01:47:13Z"
+  },
+  {
+    "status": "ok",
+    "message": "75zx0V",
+    "total": 1,
+    "blackouts": [
+      {
+        "status": "pending",
+        "customer": "5eNrCb",
+        "duration": 4,
+        "endTime": "2035-12-29T14:49:23Z",
+        "environment": "8hHJ9yXREv",
+        "event": "FFR8oIgV",
+        "group": "4hV9i",
+        "id": "K2SFbP;N-@R;[-T@31-51\\\\-I6ZM<dA7GeTP",
+        "priority": 0,
+        "remaining": 0,
+        "resource": "qFukMV",
+        "service": [
+          "JEz6Hrx9q"
+        ],
+        "startTime": "2039-05-13T04:41:12Z",
+        "tags": [
+          "xEU"
+        ]
+      },
+      {
+        "status": "active",
+        "customer": "IOm4hh6",
+        "duration": 1,
+        "endTime": "1975-09-29T01:44:47Z",
+        "environment": "ENs2KJ",
+        "event": "E6YL7KVqP",
+        "group": "U1Bgu1n",
+        "id": "`267=L]V-P6:0-4_VF-4:5M-3810\\`OF0>>V",
+        "priority": 4,
+        "remaining": 2,
+        "resource": "Joq",
+        "service": [
+          "fgGhzzbhz",
+          "JSYdiUs",
+          "FJ2WxRS4",
+          "s2PD7IR91",
+          "fI9io"
+        ],
+        "startTime": "2008-06-08T18:28:23Z",
+        "tags": [
+          "QlDcJG",
+          "OLq0",
+          "TPzSPPKJSg",
+          "wnmNZg",
+          "7QDv"
+        ]
+      },
+      {
+        "status": "pending",
+        "customer": "5gqvDewkK",
+        "duration": 4,
+        "endTime": "1979-11-17T04:37:45Z",
+        "environment": "N5PaxfphRN",
+        "event": "lOpMBfMeuw",
+        "group": "5z3JNpm",
+        "id": "<XLLf:E1-5D>4->WTS-e=N?-_ERX_a90]W7\\",
+        "priority": 1,
+        "remaining": 1,
+        "resource": "w5LFIIEz",
+        "service": [
+          "9pCRDrnJy",
+          "wmy27ON",
+          "w2XyDs"
+        ],
+        "startTime": "2022-07-24T21:58:11Z",
+        "tags": [
+          "ChxK2",
+          "HzK3OtN2ds",
+          "ZlYeOKe9f"
+        ]
+      },
+      {
+        "status": "active",
+        "customer": "ZAJIXx",
+        "duration": 0,
+        "endTime": "2035-01-06T17:48:47Z",
+        "environment": "LfBopVg",
+        "event": "VBMhfY8D9X",
+        "group": "ViW0hhwn",
+        "id": "VcO6`b:C-^[>:-EJJS-C?=0-bUUQID>]Q5HA",
+        "priority": 5,
+        "remaining": 1,
+        "resource": "MPWknGMMll",
+        "service": [],
+        "startTime": "2051-08-04T10:53:48Z",
+        "tags": []
+      }
+    ],
+    "time": "2018-01-19T07:08:50Z"
+  },
+  {
+    "status": "ok",
+    "message": "uR4PVI",
+    "total": 1,
+    "blackouts": [
+      {
+        "status": "expired",
+        "customer": "y8cVg40bQ",
+        "duration": 3,
+        "endTime": "2018-06-10T10:22:27Z",
+        "environment": "IHK",
+        "event": "PAmh4kd",
+        "group": "wpAqQ",
+        "id": "GL8SE1_`-QaON-KZBF-fZVW-_`LWN9M8GE3J",
+        "priority": 2,
+        "remaining": 0,
+        "resource": "MU0LAQ4e",
+        "service": [
+          "RKLp"
+        ],
+        "startTime": "1976-01-01T00:04:53Z",
+        "tags": [
+          "9cNUBtrob",
+          "5Uw404",
+          "MBG"
+        ]
+      },
+      {
+        "status": "expired",
+        "customer": "rAoLq4tkp",
+        "duration": 3,
+        "endTime": "1987-10-23T08:34:54Z",
+        "environment": "tD5l",
+        "event": "dwzD",
+        "group": "4osvEwbMDq",
+        "id": "BH5BKKeJ-W@>b-^P]L-K>AZ-JMff1`Kc2a=S",
+        "priority": 0,
+        "remaining": 5,
+        "resource": "vxSxIqxAtQ",
+        "service": [
+          "1K5JM",
+          "6gndWd8r"
+        ],
+        "startTime": "2009-12-03T12:51:16Z",
+        "tags": [
+          "LVCyuwFJZk",
+          "WTwZBbyI6",
+          "2iAIuvLZ",
+          "xhMYpU0VR"
+        ]
+      },
+      {
+        "status": "active",
+        "customer": "T36PReP",
+        "duration": 1,
+        "endTime": "2056-06-16T14:09:06Z",
+        "environment": "CPiiWbt34C",
+        "event": "szTD",
+        "group": "Megd",
+        "id": "[;]0`BC[-SIEA-<OY6-BUA8-DA<<LJBANbHZ",
+        "priority": 6,
+        "remaining": 4,
+        "resource": "bsRdacq",
+        "service": [
+          "ozHFWrA",
+          "VG5X",
+          "JUwkwBU"
+        ],
+        "startTime": "1976-04-30T14:30:07Z",
+        "tags": [
+          "o7sxD2V",
+          "sB3SB0DFm8"
+        ]
+      }
+    ],
+    "time": "2040-04-27T10:17:41Z"
+  },
+  {
+    "status": "error",
+    "message": "L64"
+  },
+  {
+    "status": "error",
+    "message": "1kXUu9UKX"
+  },
+  {
+    "status": "error",
+    "message": "8KqkUD1z"
+  },
+  {
+    "status": "ok",
+    "message": "FXBkZY",
+    "total": 3,
+    "blackouts": [
+      {
+        "status": "pending",
+        "customer": "rR6Fh5",
+        "duration": 2,
+        "endTime": "2028-08-08T11:56:59Z",
+        "environment": "KUB6",
+        "event": "uPBd7",
+        "group": "fWDPm78",
+        "id": ">c2Q@?HC-N?G0-5DDV-EYNZ-T6^0>Qd4Q?EA",
+        "priority": 5,
+        "remaining": 0,
+        "resource": "wUlq",
+        "service": [
+          "szCae39D",
+          "T1PCKWdh"
+        ],
+        "startTime": "2007-09-23T20:47:16Z",
+        "tags": [
+          "edmfcy9WGp",
+          "uolsPlq",
+          "Ua6v2",
+          "BdysR"
+        ]
+      }
+    ],
+    "time": "2016-03-15T21:34:45Z"
+  }
+]
