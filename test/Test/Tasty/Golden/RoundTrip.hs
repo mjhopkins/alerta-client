@@ -77,7 +77,7 @@ runRoundTrip (RoundTrip {..}) (AcceptTests accept) = do
     Right ref -> do
       mbNew <- try (getTested ref)
       case mbNew of
-        Left e -> return $ testFailed $ show (e :: SomeException)
+        Left e -> return . testFailed $ show (e :: SomeException)
         Right new -> do
           result <- cmp ref new
           case result of

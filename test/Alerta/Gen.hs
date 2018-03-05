@@ -402,7 +402,9 @@ genHeartbeatsResp = HeartbeatsResp
   <*> genMaybe genText
 
 genApiKey :: Gen ApiKey
-genApiKey = ApiKey <$> Gen.text (Range.singleton 40) Gen.unicode
+genApiKey = ApiKey <$> Gen.text
+  (Range.singleton 40)
+  (Gen.element "abcdefghiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
 
 genApiKeyType :: Gen ApiKeyType
 genApiKeyType = Gen.enumBounded

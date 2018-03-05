@@ -1,59 +1,57 @@
 [
   {
-    "text": "mKQ",
-    "user": "b5D@ak.com.au"
+    "customer": "mdaY",
+    "type": "read-only",
+    "user": "qJqx@xq.net"
   },
   {
-    "customer": "TXa",
-    "text": "McX",
+    "customer": "ueX",
+    "text": "JfQ",
+    "type": "read-only",
+    "user": "uLEp@x7.com.au"
+  },
+  {
+    "customer": "B8Qvn",
     "type": "read-write",
-    "user": "DBZ@HF.com"
+    "user": "fanLQ@pXho.org"
   },
   {
-    "customer": "T9g",
-    "text": "wz6",
-    "type": "read-only",
-    "user": "eML@N4.com"
-  },
-  {
-    "customer": "IrM",
-    "text": "TSW",
-    "type": "read-only",
-    "user": "CpE@8b.com.au"
-  },
-  {
-    "customer": "MXY",
-    "text": "mkf",
-    "type": "read-only",
-    "user": "IxI@AR.com"
-  },
-  {
-    "customer": "6s2",
-    "text": "xJI",
-    "type": "read-only",
-    "user": "bB1@X4.com.au"
-  },
-  {
-    "customer": "7Ro",
-    "text": "XAr",
+    "customer": "tqW",
+    "text": "7BC2K",
     "type": "read-write",
-    "user": "87l@Km.com"
+    "user": "TXCf9@DGnM.org"
   },
   {
-    "text": "qHd",
-    "type": "read-write",
-    "user": "ZEI@C4.net"
+    "customer": "I9z",
+    "text": "UDH",
+    "user": "9AaOE@mnZ5.com"
   },
   {
-    "customer": "Rfd",
-    "text": "RSc",
+    "customer": "auCw",
+    "user": "L0zx@zz.org"
+  },
+  {
+    "customer": "T76",
+    "text": "w8gI",
     "type": "read-only",
-    "user": "kNG@TU.com"
+    "user": "oCU@ng.com"
   },
   {
-    "customer": "xcN",
-    "text": "kdk",
+    "customer": "sLO",
+    "text": "XVX",
     "type": "read-write",
-    "user": "C8P@al.net"
+    "user": "NPs@hT.org"
+  },
+  {
+    "customer": "PgAO1",
+    "text": "tET",
+    "type": "read-only",
+    "user": "yaXb@7qh.com.au"
+  },
+  {
+    "customer": "swWdL",
+    "text": "lIxZd",
+    "type": "read-write",
+    "user": "HZwhq@30.org"
   }
 ]
