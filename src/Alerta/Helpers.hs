@@ -18,11 +18,12 @@ import           Control.Monad            (void)
 import           Data.Aeson
 import           Data.Aeson.Encode.Pretty
 import           Data.Bifunctor           (bimap)
-import qualified Data.Text                as T
 import           Data.Text                (Text)
-import           Data.Time                (getCurrentTime, UTCTime)
+import qualified Data.Text                as T
+import           Data.Time                (UTCTime, getCurrentTime)
 
-import           Network.HTTP.Client      (Manager, defaultManagerSettings, newManager)
+import           Network.HTTP.Client      (Manager, defaultManagerSettings,
+                                           newManager)
 
 import           Servant.Client
 import           System.IO.Unsafe
@@ -31,7 +32,7 @@ clientEnv :: Manager -> ClientEnv
 clientEnv m = ClientEnv m (BaseUrl Http "localhost" 8080 "")
 
 -- | Run a Servant client function, pretty-printing the JSON returned.
-run :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO a
+run :: (FromJSON a, ToJSON a) => ClientM a -> IO a
 run cl = do
   manager <- newManager defaultManagerSettings
   res     <- runClientM cl (clientEnv manager)
