@@ -119,17 +119,3 @@ prop_tripKey gen = do
   let g = genMap [0, 10] gen (Gen.int [0..5])
   m <- forAll g
   tripping m encode decode
-
-pretty :: ToJSON a => a -> String
-pretty = showUnescaped . encodePretty
-
-showUnescaped :: Show a => a -> String
-showUnescaped = replace [("\\n", "\n"), ("\\\"", "\"")] . show
-
-replace :: [(String, String)] -> String -> String
-replace assocs s = T.unpack $ foldr replace' (T.pack s) assocs'
-  where
-    assocs' :: [(Text, Text)]
-    assocs'   = map (bimap T.pack T.pack) assocs
-    replace' :: (Text, Text) -> Text -> Text
-    replace' (a,b) = T.replace a b
