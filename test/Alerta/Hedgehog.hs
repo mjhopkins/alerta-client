@@ -93,19 +93,6 @@ roundTripKey ::
   ) => Gen k -> (TestName, Property)
 roundTripKey = mkTest (++ " key round-trip") prop_tripKey
 
-compat ::
-  ( Typeable a
-  , Typeable b
-  , ToJSON a
-  , FromJSON b
-  , Eq a
-  , Show a
-  ) => Gen a -> Gen b -> (b -> a) -> (TestName, Property)
-compat gena genb f =
-  ( "Compatibility between "  ++ typeName gena ++ " and " ++ typeName genb
-  , property (prop_compat gena genb f)
-  )
-
 mkTest :: Typeable a => (String -> String) -> (p a -> PropertyT IO ()) -> p a -> (TestName, Property)
 mkTest mkTestName prop = mkTestName . typeName &&& property . prop
 
