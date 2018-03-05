@@ -106,7 +106,7 @@ goldenRoundTrip gen =
 
       create = do
         putStrLn $ "Creating a new file " ++ file
-        bs <- LBS.toStrict . encode <$> createList gen
+        bs <- LBS.toStrict . prettyPrint <$> createList gen
         BS.writeFile file bs
         return bs
 
