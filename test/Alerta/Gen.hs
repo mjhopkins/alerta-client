@@ -216,9 +216,6 @@ genExtendedHistoryItem = Gen.choice
       <*> genMaybe genCustomerName
   ]
 
--- genResp :: (Text -> a) -> Gen a -> Gen a
--- genResp err ok = Gen.choice [ok, err <$> genText]
-
 genCreateAlertResp :: Gen CreateAlertResp
 genCreateAlertResp = CreateAlertResp
   <$> genUUID

@@ -24,12 +24,12 @@ import           Text.Printf                 (printf)
 
 tests :: [TestTree]
 tests =
-    [ goldenRoundTrip genUTCTime
+    [ goldenRoundTrip $ genResponse genUnit
+    , goldenRoundTrip genUTCTime
     , goldenRoundTrip genAlert
     , goldenRoundTrip genAlertInfo
     , goldenRoundTrip genHistoryItem
     , goldenRoundTrip genExtendedHistoryItem
-    , goldenRoundTrip $ genResponse genUnit
     , goldenRoundTrip $ genResponse genCreateAlertResp
     , goldenRoundTrip $ genResponse genAlertResp
     , goldenRoundTrip $ genResponse genAlertsResp
@@ -48,7 +48,10 @@ tests =
     , goldenRoundTrip genBlackoutStatus
     , goldenRoundTrip genExtendedBlackoutInfo
     , goldenRoundTrip $ genResponse genBlackoutResp
+    , goldenRoundTrip $ genResponse genBlackoutsResp
     , goldenRoundTrip genHeartbeat
+    , goldenRoundTrip genHeartbeatInfo
+    , goldenRoundTrip $ genResponse genCreateHeartbeatResp
     , goldenRoundTrip $ genResponse genHeartbeatResp
     , goldenRoundTrip $ genResponse genHeartbeatsResp
     , goldenRoundTrip genApiKey
@@ -60,11 +63,11 @@ tests =
     , goldenRoundTrip genRoleType
     , goldenRoundTrip genUserInfo
     , goldenRoundTrip genExtendedUserInfo
-    , goldenRoundTrip genExtendedUserInfo
     , goldenRoundTrip $ genResponse genUserResp
     , goldenRoundTrip $ genResponse genUsersResp
     , goldenRoundTrip genCustomer
     , goldenRoundTrip genCustomerInfo
+    , goldenRoundTrip $ genResponse genCustomerResp
     , goldenRoundTrip $ genResponse genCustomersResp
     ]
 
