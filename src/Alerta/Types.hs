@@ -49,8 +49,8 @@ module Alerta.Types
   , FieldQuery
   , MatchType(..)
   , (=.), (!=), (~.), (!~)
-  -- ** Generic response
-  , Resp(..)
+  -- ** Response monad
+  , Response(..)
   -- ** Alerts
   , Severity(..)
   , Status(..)
@@ -123,9 +123,6 @@ module Alerta.Types
   , CustomerInfo(..)
   , CustomerResp(..)
   , CustomersResp(..)
-
-  , Response(..)
-  , UserResp'(..)
   ) where
 
 import           Alerta.Util
@@ -147,6 +144,7 @@ import           Data.String         (IsString (..))
 import           Data.Text           (Text)
 import qualified Data.Text           as T
 import           Data.Time           (UTCTime)
+import qualified Data.Vector         as V
 
 import           GHC.Generics
 
@@ -337,15 +335,6 @@ data TrendIndication = NoChange | LessSevere | MoreSevere
 
 instance FromHttpApiData TrendIndication where
   parseQueryParam = parseBoundedTextData
-
---------------------------------------------------------------------------------
--- Basic response
---------------------------------------------------------------------------------
-
--- | This type is used for basic responses that have no content beyond whether they succeeded or
--- failed with an error message.
-data Resp = OkResp | ErrorResp { respMessage :: Text }
-  deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- Alerts
@@ -557,44 +546,36 @@ data StatusChange = StatusChange
   , statusChangeText   :: Maybe Text
   } deriving (Eq, Show, Generic)
 
-data CreateAlertResp = OkCreateAlertResp
-  { okCreateAlertRespId      :: UUID
-  , okCreateAlertRespAlert   :: Maybe AlertInfo -- ^ not present if rate limited or in blackout
-  , okCreateAlertRespMessage :: Maybe Text      -- ^ present when rate limited or in blackout
-  } | ErrorCreateAlertResp {
-    errorCreateAlertRespMessage :: Text
+data CreateAlertResp = CreateAlertResp
+  { createAlertRespId      :: UUID
+  , createAlertRespAlert   :: Maybe AlertInfo -- ^ not present if rate limited or in blackout
+  , createAlertRespMessage :: Maybe Text      -- ^ present when rate limited or in blackout
   } deriving (Eq, Show, Generic)
 
-data AlertResp = OkAlertResp
-  { okAlertRespAlert :: AlertInfo
-  , okAlertRespTotal :: Int
-  } | ErrorAlertResp {
-    errorAlertRespMessage :: Text
+data AlertResp = AlertResp
+  { alertRespAlert :: AlertInfo
+  , alertRespTotal :: Int
   } deriving (Eq, Show, Generic)
 
-data AlertsResp = OkAlertsResp
-  { okAlertsRespAlerts         :: [AlertInfo]
-  , okAlertsRespTotal          :: Int
-  , okAlertsRespPage           :: PageNo
-  , okAlertsRespPageSize       :: Int
-  , okAlertsRespPages          :: Int
-  , okAlertsRespMore           :: Bool
-  , okAlertsRespSeverityCounts :: Maybe (Map Severity Int)
-  , okAlertsRespStatusCounts   :: Maybe (Map Status Int)
-  , okAlertsRespLastTime       :: UTCTime
-  , okAlertsRespAutoRefresh    :: Bool
-  , okAlertsRespMessage        :: Maybe Text
-  } | ErrorAlertsResp
-  { errorAlertsRespMessage       :: Text
+data AlertsResp = AlertsResp
+  { alertsRespAlerts         :: [AlertInfo]
+  , alertsRespTotal          :: Int
+  , alertsRespPage           :: PageNo
+  , alertsRespPageSize       :: Int
+  , alertsRespPages          :: Int
+  , alertsRespMore           :: Bool
+  , alertsRespSeverityCounts :: Maybe (Map Severity Int)
+  , alertsRespStatusCounts   :: Maybe (Map Status Int)
+  , alertsRespLastTime       :: UTCTime
+  , alertsRespAutoRefresh    :: Bool
+  , alertsRespMessage        :: Maybe Text
   } deriving (Eq, Show, Generic)
 
-data AlertCountResp = OkAlertCountResp
-  { okAlertCountRespTotal          :: Int
-  , okAlertCountRespSeverityCounts :: Int
-  , okAlertCountRespStatusCounts   :: Int
-  , okAlertCountRespMessage        :: Maybe Text
-  } | ErrorAlertCountResp
-  { errorAlertCountRespMessage     :: Text
+data AlertCountResp = AlertCountResp
+  { alertCountRespTotal          :: Int
+  , alertCountRespSeverityCounts :: Int
+  , alertCountRespStatusCounts   :: Int
+  , alertCountRespMessage        :: Maybe Text
   } deriving (Eq, Show, Generic)
 
 data ResourceInfo = ResourceInfo
@@ -615,20 +596,16 @@ data Top10Info = Top10Info
   , top10InfoResources      :: [ResourceInfo]
   } deriving (Eq, Show, Generic)
 
-data Top10Resp = OkTop10Resp
-  { okTop10RespTop10   :: [Top10Info]
-  , okTop10RespTotal   :: Int
-  , okTop10RespMessage :: Maybe Text
-  } | ErrorTop10Resp
-  { errorTop10RespMessage :: Text
+data Top10Resp = Top10Resp
+  { top10RespTop10   :: [Top10Info]
+  , top10RespTotal   :: Int
+  , top10RespMessage :: Maybe Text
   } deriving (Eq, Show, Generic)
 
-data AlertHistoryResp = OkAlertHistoryResp
-  { okAlertHistoryRespHistory  :: [ExtendedHistoryItem]
-  , okAlertHistoryRespLastTime :: UTCTime
-  , okAlertHistoryRespMessage  :: Maybe Text
-  } | ErrorAlertHistoryResp
-  { errorAlertHistoryResp      :: Text
+data AlertHistoryResp = AlertHistoryResp
+  { alertHistoryRespHistory  :: [ExtendedHistoryItem]
+  , alertHistoryRespLastTime :: UTCTime
+  , alertHistoryRespMessage  :: Maybe Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -640,12 +617,10 @@ data EnvironmentInfo = EnvironmentInfo
   , environmentInfoEnvironment :: Environment
   } deriving (Eq, Show, Generic)
 
-data EnvironmentsResp = OkEnvironmentsResp
-  { okEnvironmentsRespMessage      :: Maybe Text
-  , okEnvironmentsRespTotal        :: Int
-  , okEnvironmentsRespEnvironments :: [EnvironmentInfo]
-  } | ErrorEnvironmentsResp
-  { errorEnvironmentsRespMessage :: Text
+data EnvironmentsResp = EnvironmentsResp
+  { environmentsRespMessage      :: Maybe Text
+  , environmentsRespTotal        :: Int
+  , environmentsRespEnvironments :: [EnvironmentInfo]
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -658,12 +633,10 @@ data ServiceInfo = ServiceInfo
   , serviceInfoService     :: Service
   } deriving (Eq, Show, Generic)
 
-data ServicesResp = OkServicesResp
-  { okServicesRespTotal    :: Int
-  , okServicesRespServices :: [ServiceInfo]
-  , okServicesRespMessage  :: Maybe Text
-  } | ErrorServicesResp
-  { errorServicesRespMessage :: Text
+data ServicesResp = ServicesResp
+  { servicesRespTotal    :: Int
+  , servicesRespServices :: [ServiceInfo]
+  , servicesRespMessage  :: Maybe Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -745,20 +718,16 @@ data ExtendedBlackoutInfo = ExtendedBlackoutInfo
   , extendedBlackoutInfoStatus      :: BlackoutStatus
   } deriving (Eq, Show, Generic)
 
-data BlackoutResp = OkBlackoutResp
-  { okBlackoutRespId       :: UUID
-  , okBlackoutRespBlackout :: BlackoutInfo
-  } | ErrorBlackoutResp {
-    errorBlackoutRespMessage :: Text
+data BlackoutResp = BlackoutResp
+  { blackoutRespId       :: UUID
+  , blackoutRespBlackout :: BlackoutInfo
   } deriving (Eq, Show, Generic)
 
-data BlackoutsResp = OkBlackoutsResp
-  { okBlackoutsRespTotal     :: Int
-  , okBlackoutsRespBlackouts :: [ExtendedBlackoutInfo]
-  , okBlackoutsRespMessage   :: Maybe Text
-  , okBlackoutsRespTime      :: UTCTime
-  } | ErrorBlackoutsResp {
-    errorBlackoutsRespMessage :: Text
+data BlackoutsResp = BlackoutsResp
+  { blackoutsRespTotal     :: Int
+  , blackoutsRespBlackouts :: [ExtendedBlackoutInfo]
+  , blackoutsRespMessage   :: Maybe Text
+  , blackoutsRespTime      :: UTCTime
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -787,29 +756,22 @@ data HeartbeatInfo = HeartbeatInfo
   , heartbeatInfoType        :: Text
   } deriving (Eq, Show, Generic)
 
-data CreateHeartbeatResp = OkCreateHeartbeatResp
+data CreateHeartbeatResp = CreateHeartbeatResp
   { createHeartbeatRespId        :: UUID
   , createHeartbeatRespHeartbeat :: HeartbeatInfo
-  } | ErrorCreateHeartbeatResp
-  { createHeartbeatRespMessage   :: Text
   } deriving (Eq, Show, Generic)
 
-data HeartbeatResp = OkHeartbeatResp
+data HeartbeatResp = HeartbeatResp
   { heartbeatRespHeartbeat :: HeartbeatInfo
   , heartbeatRespTotal     :: Int
-  } | ErrorHeartbeatResp
-  { heartbeatRespMessage   :: Text
   } deriving (Eq, Show, Generic)
 
-data HeartbeatsResp = OkHeartbeatsResp
+data HeartbeatsResp = HeartbeatsResp
   { heartbeatsRespHeartbeats :: [HeartbeatInfo]
   , heartbeatsRespTime       :: Maybe UTCTime
   , heartbeatsRespTotal      :: Int
   , heartbeatsRespMessage    :: Maybe Text
-  } | ErrorHeartbeatsResp
-  { heartbeatsRespErrorMessage :: Text
   } deriving (Eq, Show, Generic)
-
 
 --------------------------------------------------------------------------------
 -- API keys
@@ -871,20 +833,16 @@ data ApiKeyInfo = ApiKeyInfo
   , apiKeyInfoCustomer     :: Maybe CustomerName
   } deriving (Eq, Show, Generic)
 
-data CreateApiKeyResp = OkCreateApiKeyResp
-  { okCreateApiKeyRespKey  :: ApiKey
-  , okCreateApiKeyRespData :: ApiKeyInfo
-  } | ErrorCreateApiKeyResp
-  { errorCreateApiKeyRespMessage :: Text
+data CreateApiKeyResp = CreateApiKeyResp
+  { createApiKeyRespKey  :: ApiKey
+  , createApiKeyRespData :: ApiKeyInfo
   } deriving (Eq, Show, Generic)
 
-data ApiKeysResp = OkApiKeysResp
-  { okApiKeysRespKeys    :: [ApiKeyInfo]
-  , okApiKeysRespTotal   :: Int
-  , okApiKeysRespTime    :: UTCTime
-  , okApiKeysRespMessage :: Maybe Text
-  } | ErrorApiKeysResp
-  { errorApiKeysRespMessage :: Text
+data ApiKeysResp = ApiKeysResp
+  { apiKeysRespKeys    :: [ApiKeyInfo]
+  , apiKeysRespTotal   :: Int
+  , apiKeysRespTime    :: UTCTime
+  , apiKeysRespMessage :: Maybe Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -1007,29 +965,20 @@ data ExtendedUserInfo = ExtendedUserInfo
   , extendedUserInfoEmail_verified :: Bool
   } deriving (Eq, Show, Generic)
 
-data UserResp = OkUserResp
-  { okUserRespId   :: UUID
-  , okUserRespUser :: UserInfo
-  } | ErrorUserResp {
-    errorUserRespMessage :: Text
+data UserResp = UserResp
+  { userRespId   :: UUID
+  , userRespUser :: UserInfo
   } deriving (Eq, Show, Generic)
 
-data UserResp' = UserResp'
-  { userResp'Id   :: UUID
-  , userResp'User :: UserInfo
-  } deriving (Eq, Show, Generic)
-
-data UsersResp = OkUsersResp
-  { okUsersRespUsers   :: [ExtendedUserInfo]
-  , okUsersRespTotal   :: Int
-  , okUsersRespDomains :: [Text]       -- allowed email domains
-  , okUsersRespGroups  :: [Text]       -- allowed Gitlab groups
-  , okUsersRespOrgs    :: [Text]       -- allowed Github orgs
-  , okUsersRespRoles   :: Maybe [Text] -- allowed Keycloud roles
-  , okUsersRespTime    :: UTCTime
-  , okUsersRespMessage :: Maybe Text
-  } | ErrorUsersResp {
-    errorUsersResp :: Text
+data UsersResp = UsersResp
+  { usersRespUsers   :: [ExtendedUserInfo]
+  , usersRespTotal   :: Int
+  , usersRespDomains :: [Text]       -- allowed email domains
+  , usersRespGroups  :: [Text]       -- allowed Gitlab groups
+  , usersRespOrgs    :: [Text]       -- allowed Github orgs
+  , usersRespRoles   :: Maybe [Text] -- allowed Keycloud roles
+  , usersRespTime    :: UTCTime
+  , usersRespMessage :: Maybe Text
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -1047,20 +996,16 @@ data CustomerInfo = CustomerInfo
   , customerInfoMatch    :: Text -- regex, apparently
   } deriving (Eq, Show, Generic)
 
-data CustomerResp = OkCustomerResp
-  { okCustomerRespId       :: UUID
-  , okCustomerRespCustomer :: CustomerInfo
-  } | ErrorCustomerResp {
-    errorCustomerRespMessage :: Text
+data CustomerResp = CustomerResp
+  { customerRespId       :: UUID
+  , customerRespCustomer :: CustomerInfo
   } deriving (Eq, Show, Generic)
 
-data CustomersResp = OkCustomersResp
-  { okCustomersRespCustomers :: [CustomerInfo]
-  , okCustomersRespTotal     :: Int
-  , okCustomersRespMessage   :: Maybe Text
-  , okCustomersRespTime      :: UTCTime
-  } | ErrorCustomersResp {
-    errorCustomersMessage    :: Text
+data CustomersResp = CustomersResp
+  { customersRespCustomers :: [CustomerInfo]
+  , customersRespTotal     :: Int
+  , customersRespMessage   :: Maybe Text
+  , customersRespTime      :: UTCTime
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
@@ -1083,17 +1028,24 @@ instance ToJSON a => ToJSON (Response a) where
   toJSON (OkResponse t)    = addPair ("status", "ok") $ toJSON t
   toJSON (ErrorResponse t) = object ["status" .= ("error" :: Text), "message" .= t]
 
-instance FromJSON a => FromJSON (Response a) where
-  parseJSON = withObject "object" $ \o -> do
-    status <- o .: "status"
-    case status of
-      "ok"    -> OkResponse <$> parseJSON (Object o)
-      "error" -> ErrorResponse <$> o .: "message"
-      other   -> fail $ "\"" ++ other ++ "\" is not a valid status"
+instance {-# OVERLAPPING #-} FromJSON (Response ()) where
+  parseJSON = parseResponse $ \_ -> return ()
+
+instance {-# OVERLAPPABLE #-} FromJSON a => FromJSON (Response a) where
+  parseJSON = parseResponse parseJSON
+
+parseResponse :: (Aeson.Value -> Parser a) -> Aeson.Value -> Parser (Response a)
+parseResponse v = withObject "object" $ \o -> do
+  status <- o .: "status"
+  case status of
+    "ok"    -> OkResponse <$> v (Object o)
+    "error" -> ErrorResponse <$> o .: "message"
+    other   -> fail $ "\"" ++ other ++ "\" is not a valid status"
 
 -- NB unsafe!
 addPair :: Pair -> Aeson.Value -> Aeson.Value
 addPair (k, v) (Object m) = Object $ HM.insert k v m
+addPair (k, v) (Array a) | V.null a = Object $ HM.singleton k v
 addPair _ other           = error $ "Can't add a pair to " ++ name
   where
   name = case other of
@@ -1104,9 +1056,6 @@ addPair _ other           = error $ "Can't add a pair to " ++ name
            Bool _   -> "a boolean"
            Null     -> "null"
 
-$( deriveJSON (toOpts 2 2 def)                    ''UserResp'            )
-
-
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )
 $( deriveJSON (toOpts 1 1 def)                    ''Alert                )
@@ -1114,29 +1063,29 @@ $( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Tags                 )
 $( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Attributes           )
 $( deriveJSON (toOpts 2 2 def)                    ''AlertAttr            )
 $( deriveJSON (toOpts 2 2 def)                    ''AlertInfo            )
-$( deriveJSON (toOpts 4 3 def)                    ''CreateAlertResp      )
-$( deriveJSON (toOpts 3 2 def)                    ''AlertResp            )
-$( deriveJSON (toOpts 3 2 def)                    ''AlertsResp           )
+$( deriveJSON (toOpts 3 3 def)                    ''CreateAlertResp      )
+$( deriveJSON (toOpts 2 2 def)                    ''AlertResp            )
+$( deriveJSON (toOpts 2 2 def)                    ''AlertsResp           )
 $( deriveJSON (toOpts 2 2 def)                    ''ResourceInfo         )
 $( deriveJSON (toOpts 2 2 def)                    ''Top10Info            )
-$( deriveJSON (toOpts 3 2 def)                    ''Top10Resp            )
-$( deriveJSON (toOpts 4 3 def)                    ''AlertCountResp       )
-$( deriveJSON (toOpts 4 3 def)                    ''AlertHistoryResp     )
+$( deriveJSON (toOpts 2 2 def)                    ''Top10Resp            )
+$( deriveJSON (toOpts 3 3 def)                    ''AlertCountResp       )
+$( deriveJSON (toOpts 3 3 def)                    ''AlertHistoryResp     )
 $( deriveJSON (toOpts 2 2 def)                    ''StatusChange         )
-$( deriveJSON (toOpts 2 1 def)                    ''Resp                 )
+-- $( deriveJSON (toOpts 2 1 def)                    ''Resp                 )
 $( deriveJSON (toOpts 0 0 def)                    ''TrendIndication      )
 $( deriveJSON (toOpts 2 2 def { tag = "type" })   ''HistoryItem          )
 $( deriveJSON (toOpts 4 3 def { tag = "type" })   ''ExtendedHistoryItem  )
 $( deriveJSON (toOpts 2 2 def)                    ''EnvironmentInfo      )
-$( deriveJSON (toOpts 3 2 def)                    ''EnvironmentsResp     )
+$( deriveJSON (toOpts 2 2 def)                    ''EnvironmentsResp     )
 $( deriveJSON (toOpts 2 2 def)                    ''ServiceInfo          )
-$( deriveJSON (toOpts 3 2 def)                    ''ServicesResp         )
+$( deriveJSON (toOpts 2 2 def)                    ''ServicesResp         )
 $( deriveJSON (toOpts 1 1 def)                    ''Blackout             )
 $( deriveJSON (toOpts 2 2 def)                    ''BlackoutInfo         )
 $( deriveJSON (toOpts 2 0 def)                    ''BlackoutStatus       )
 $( deriveJSON (toOpts 3 3 def)                    ''ExtendedBlackoutInfo )
-$( deriveJSON (toOpts 3 2 def)                    ''BlackoutResp         )
-$( deriveJSON (toOpts 3 2 def)                    ''BlackoutsResp        )
+$( deriveJSON (toOpts 2 2 def)                    ''BlackoutResp         )
+$( deriveJSON (toOpts 2 2 def)                    ''BlackoutsResp        )
 $( deriveJSON (toOpts 1 1 def)                    ''Heartbeat            )
 $( deriveJSON (toOpts 2 2 def)                    ''HeartbeatInfo        )
 $( deriveJSON (toOpts 3 3 def)                    ''CreateHeartbeatResp  )
@@ -1144,15 +1093,15 @@ $( deriveJSON (toOpts 2 2 def)                    ''HeartbeatResp        )
 $( deriveJSON (toOpts 2 2 def)                    ''HeartbeatsResp       )
 $( deriveJSON (toOpts 3 3 def)                    ''CreateApiKey         )
 $( deriveJSON (toOpts 3 3 def)                    ''ApiKeyInfo           )
-$( deriveJSON (toOpts 5 4 def)                    ''CreateApiKeyResp     )
-$( deriveJSON (toOpts 4 3 def)                    ''ApiKeysResp          )
+$( deriveJSON (toOpts 4 4 def)                    ''CreateApiKeyResp     )
+$( deriveJSON (toOpts 3 3 def)                    ''ApiKeysResp          )
 $( deriveJSON (toOpts 3 2 def)                    ''RoleType             )
 $( deriveJSON (toOpts 1 1 def)                    ''User                 )
 $( deriveJSON (toOpts 2 2 def)                    ''UserInfo             )
 $( deriveJSON (toOpts 3 3 def)                    ''ExtendedUserInfo     )
-$( deriveJSON (toOpts 3 2 def)                    ''UserResp             )
-$( deriveJSON (toOpts 3 2 def)                    ''UsersResp            )
+$( deriveJSON (toOpts 2 2 def)                    ''UserResp             )
+$( deriveJSON (toOpts 2 2 def)                    ''UsersResp            )
 $( deriveJSON (toOpts 1 1 def)                    ''Customer             )
 $( deriveJSON (toOpts 2 2 def)                    ''CustomerInfo         )
-$( deriveJSON (toOpts 3 2 def)                    ''CustomerResp         )
-$( deriveJSON (toOpts 3 2 def)                    ''CustomersResp        )
+$( deriveJSON (toOpts 2 2 def)                    ''CustomerResp         )
+$( deriveJSON (toOpts 2 2 def)                    ''CustomersResp        )

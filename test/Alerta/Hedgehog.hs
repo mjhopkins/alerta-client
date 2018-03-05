@@ -4,7 +4,6 @@
 
 module Alerta.Hedgehog where
 
-import           Alerta
 import           Alerta.Gen
 import           Control.Arrow            ((&&&))
 import           Data.Aeson               (FromJSON, FromJSONKey, ToJSON,
@@ -18,71 +17,63 @@ import           Data.Typeable            (Typeable)
 import           Hedgehog                 (Gen, Property, PropertyT, forAll,
                                            property, tripping)
 import qualified Hedgehog.Gen             as Gen
+import           Test.Tasty               (TestName, TestTree)
+import           Test.Tasty.Hedgehog      (testProperty)
 
-type TestName = String
 
-tests :: [(TestName, Property)]
-tests =
+tests :: [TestTree]
+tests = uncurry testProperty <$>
   [ roundTrip genSeverity
   , roundTripKey genSeverity
   , roundTrip genStatus
   , roundTripKey genStatus
   , roundTrip genCustomer
   , roundTrip genCreateAlertResp
-  , roundTrip genAlertResp
-  , roundTrip genAlertsResp
-  , roundTrip genAlertCountResp
+  , roundTrip $ genResponse genCreateAlertResp
+  , roundTrip $ genResponse genAlertResp
+  , roundTrip $ genResponse genAlertsResp
+  , roundTrip $ genResponse genAlertCountResp
   , roundTrip genResourceInfo
   , roundTrip genTop10Info
-  , roundTrip genTop10Resp
-  , roundTrip genAlertHistoryResp
+  , roundTrip $ genResponse genTop10Resp
+  , roundTrip $ genResponse genAlertHistoryResp
   , roundTrip genStatusChange
-  , roundTrip genResp' --TODO
+  , roundTrip $ genResponse genUnit
   , roundTrip genTrendIndication
   , roundTrip genHistoryItem
   , roundTrip genExtendedHistoryItem
   , roundTrip genEnvironmentInfo
-  , roundTrip genEnvironmentsResp
+  , roundTrip $ genResponse genEnvironmentsResp
   , roundTrip genServiceInfo
-  , roundTrip genServicesResp
+  , roundTrip $ genResponse genServicesResp
   , roundTrip genBlackout
   , roundTrip genBlackoutInfo
   , roundTrip genBlackoutStatus
   , roundTrip genExtendedBlackoutInfo
-  , roundTrip genBlackoutResp
-  , roundTrip genBlackoutsResp
+  , roundTrip $ genResponse genBlackoutResp
+  , roundTrip $ genResponse genBlackoutsResp
   , roundTrip genHeartbeat
   , roundTrip genHeartbeatInfo
-  , roundTrip genCreateHeartbeatResp
-  , roundTrip genHeartbeatResp
-  , roundTrip genHeartbeatsResp
+  , roundTrip $ genResponse genCreateHeartbeatResp
+  , roundTrip $ genResponse genHeartbeatResp
+  , roundTrip $ genResponse genHeartbeatsResp
   , roundTrip genApiKey
   , roundTrip genApiKeyType
   , roundTrip genCreateApiKey
   , roundTrip genApiKeyInfo
-  , roundTrip genCreateApiKeyResp
-  , roundTrip genApiKeysResp
+  , roundTrip $ genResponse genCreateApiKeyResp
+  , roundTrip $ genResponse genApiKeysResp
   , roundTrip genUser
   , roundTrip genRoleType
   , roundTrip genUserInfo
   , roundTrip genExtendedUserInfo
-  , roundTrip genUserResp
-  , roundTrip genUsersResp
+  , roundTrip $ genResponse genUserResp
+  , roundTrip $ genResponse genUsersResp
   , roundTrip genCustomer
   , roundTrip genCustomerInfo
-  , roundTrip genCustomerResp
-  , roundTrip genCustomersResp
-  , compat genUserResp genRespUserResp responseUserRespToUserResp
-  , compat genRespUserResp genUserResp userRespToResponseUserResp
+  , roundTrip $ genResponse genCustomerResp
+  , roundTrip $ genResponse genCustomersResp
   ]
-
-userRespToResponseUserResp :: UserResp -> Response UserResp'
-userRespToResponseUserResp (ErrorUserResp t) = (ErrorResponse t)
-userRespToResponseUserResp (OkUserResp i u)  = (OkResponse (UserResp' i u))
-
-responseUserRespToUserResp :: Response UserResp' -> UserResp
-responseUserRespToUserResp (ErrorResponse t)            = ErrorUserResp t
-responseUserRespToUserResp (OkResponse (UserResp' i u)) = OkUserResp i u
 
 roundTrip ::
   ( Typeable a
@@ -127,10 +118,6 @@ prop_trip ::
   ) => Gen a -> PropertyT m ()
 prop_trip gen = do
   a <- forAll gen
-  -- traceM (show a)
-  -- let e = encode a
-  -- traceM (pretty a)
-  -- decode (e) === Just a
   tripping a encode eitherDecode
 
 prop_tripKey ::
@@ -145,17 +132,6 @@ prop_tripKey gen = do
   let g = genMap [0, 10] gen (Gen.int [0..5])
   m <- forAll g
   tripping m encode decode
-
-prop_compat ::
-  ( ToJSON a
-  , FromJSON b
-  , Eq a
-  , Show a
-  , Monad m
-  ) => Gen a -> Gen b -> (b -> a) -> PropertyT m ()
-prop_compat gen1 gen2 f = do
-  a <- forAll gen1
-  tripping a encode (fmap f . decode)
 
 pretty :: ToJSON a => a -> String
 pretty = showUnescaped . encodePretty

@@ -1,5 +1,5 @@
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE TypeOperators  #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -115,69 +115,69 @@ type Query a =
 --------------------------------------------------------------------------------
 
 type AlertApi =
-       WithApiKey :> "alert" :> ReqBody '[JSON] Alert :> Post '[JSON] CreateAlertResp
-  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> Get '[JSON] AlertResp
-  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> Delete '[JSON] Resp
-  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "status"      :> ReqBody '[JSON] StatusChange :> Put '[JSON] Resp
-  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "tag"         :> ReqBody '[JSON] Tags         :> Put '[JSON] Resp
-  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "untag"       :> ReqBody '[JSON] Tags         :> Put '[JSON] Resp
-  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "attributes"  :> ReqBody '[JSON] Attributes   :> Put '[JSON] Resp
+       WithApiKey :> "alert" :> ReqBody '[JSON] Alert :> Post '[JSON] (Response CreateAlertResp)
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> Get '[JSON] (Response AlertResp)
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> Delete '[JSON] (Response ())
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "status"      :> ReqBody '[JSON] StatusChange :> Put '[JSON] (Response ())
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "tag"         :> ReqBody '[JSON] Tags         :> Put '[JSON] (Response ())
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "untag"       :> ReqBody '[JSON] Tags         :> Put '[JSON] (Response ())
+  :<|> WithApiKey :> "alert" :> Capture "id" UUID     :> "attributes"  :> ReqBody '[JSON] Attributes   :> Put '[JSON] (Response ())
 
 type AlertsApi =
-       WithApiKey :> "alerts" :> Query (Fields (Sort (Page (Limited (Get '[JSON] AlertsResp)))))
-  :<|> WithApiKey :> "alerts" :> "history" :> Query (Limited (Get '[JSON] AlertHistoryResp))
-  :<|> WithApiKey :> "alerts" :> "count"   :> Query (Get '[JSON] AlertCountResp)
-  :<|> WithApiKey :> "alerts" :> "top10"   :> Query (Grouped (Get '[JSON] Top10Resp))
-  :<|> WithApiKey :> "alerts" :> "top10"   :> "count"    :> Query (Grouped (Get '[JSON] Top10Resp))
-  :<|> WithApiKey :> "alerts" :> "top10"   :> "flapping" :> Query (Grouped (Get '[JSON] Top10Resp))
+       WithApiKey :> "alerts" :> Query (Fields (Sort (Page (Limited (Get '[JSON] (Response AlertsResp))))))
+  :<|> WithApiKey :> "alerts" :> "history" :> Query (Limited (Get '[JSON] (Response AlertHistoryResp)))
+  :<|> WithApiKey :> "alerts" :> "count"   :> Query (Get '[JSON] (Response AlertCountResp))
+  :<|> WithApiKey :> "alerts" :> "top10"   :> Query (Grouped (Get '[JSON] (Response Top10Resp)))
+  :<|> WithApiKey :> "alerts" :> "top10"   :> "count"    :> Query (Grouped (Get '[JSON] (Response Top10Resp)))
+  :<|> WithApiKey :> "alerts" :> "top10"   :> "flapping" :> Query (Grouped (Get '[JSON] (Response Top10Resp)))
 
 -- An environment cannot be created – it is a dynamically derived resource based on existing alerts.
 type EnvironmentApi =
-  WithApiKey :> "environments" :> Query (Limited (Get '[JSON] EnvironmentsResp))
+  WithApiKey :> "environments" :> Query (Limited (Get '[JSON] (Response EnvironmentsResp)))
 
 -- A service cannot be created – it is a dynamically derived resource based on existing alerts.
 type ServiceApi =
-  WithApiKey :> "services" :> Query (Limited (Get '[JSON] ServicesResp))
+  WithApiKey :> "services" :> Query (Limited (Get '[JSON] (Response ServicesResp)))
 
 type BlackoutApi =
-      WithApiKey :> "blackout"  :> ReqBody '[JSON] Blackout :> Post '[JSON] BlackoutResp
- :<|> WithApiKey :> "blackout"  :> Capture "blackout" UUID  :> Delete '[JSON] Resp
- :<|> WithApiKey :> "blackouts" :> Get '[JSON] BlackoutsResp
+      WithApiKey :> "blackout"  :> ReqBody '[JSON] Blackout :> Post '[JSON] (Response BlackoutResp)
+ :<|> WithApiKey :> "blackout"  :> Capture "blackout" UUID  :> Delete '[JSON] (Response ())
+ :<|> WithApiKey :> "blackouts" :> Get '[JSON] (Response BlackoutsResp)
 
 type HeartbeatApi =
-       WithApiKey :> "heartbeat"  :> ReqBody '[JSON] Heartbeat :> Post '[JSON] CreateHeartbeatResp
- :<|>  WithApiKey :> "heartbeat"  :> Capture "id" UUID         :> Get '[JSON] HeartbeatResp
- :<|>  WithApiKey :> "heartbeat"  :> Capture "id" UUID         :> Delete '[JSON] Resp
- :<|>  WithApiKey :> "heartbeats" :> Get '[JSON] HeartbeatsResp
+     WithApiKey :> "heartbeat"  :> ReqBody '[JSON] Heartbeat :> Post '[JSON] (Response CreateHeartbeatResp)
+ :<|>  WithApiKey :> "heartbeat"  :> Capture "id" UUID         :> Get '[JSON] (Response HeartbeatResp)
+ :<|>  WithApiKey :> "heartbeat"  :> Capture "id" UUID         :> Delete '[JSON] (Response ())
+ :<|>  WithApiKey :> "heartbeats" :> Get '[JSON] (Response HeartbeatsResp)
 
 type ApiKeyApi =
-       NeedApiKey :> "key"  :> ReqBody '[JSON] CreateApiKey :> Post '[JSON] CreateApiKeyResp
- :<|>  WithApiKey :> "key"  :> Capture "key" ApiKey         :> Delete '[JSON] Resp
- :<|>  WithApiKey :> "keys" :> Get '[JSON] ApiKeysResp
+       NeedApiKey :> "key"  :> ReqBody '[JSON] CreateApiKey :> Post '[JSON] (Response CreateApiKeyResp)
+ :<|>  WithApiKey :> "key"  :> Capture "key" ApiKey         :> Delete '[JSON] (Response ())
+ :<|>  WithApiKey :> "keys" :> Get '[JSON] (Response ApiKeysResp)
 
 type UserApi =
-      WithApiKey :> "user"  :> ReqBody '[JSON] User           :> Post '[JSON] UserResp
- :<|> WithApiKey :> "user"  :> Capture "user" UUID            :> Delete '[JSON] Resp
- :<|> WithApiKey :> "user"  :> Capture "user" UUID            :> ReqBody '[JSON] (UserAttr 'Nonempty) :> Put '[JSON] Resp
- :<|> WithApiKey :> "users" :> QueryParam "name" CustomerName :> QueryParam "login" Email             :> Get '[JSON] UsersResp
+      WithApiKey :> "user"  :> ReqBody '[JSON] User           :> Post '[JSON] (Response UserResp)
+ :<|> WithApiKey :> "user"  :> Capture "user" UUID            :> Delete '[JSON] (Response ())
+ :<|> WithApiKey :> "user"  :> Capture "user" UUID            :> ReqBody '[JSON] (UserAttr 'Nonempty) :> Put '[JSON] (Response ())
+ :<|> WithApiKey :> "users" :> QueryParam "name" CustomerName :> QueryParam "login" Email             :> Get '[JSON] (Response UsersResp)
 
 type CustomerApi =
-       WithApiKey :> "customer"  :> ReqBody '[JSON] Customer :> Post '[JSON] CustomerResp
- :<|>  WithApiKey :> "customer"  :> Capture "customer" UUID  :> Delete '[JSON] Resp
- :<|>  WithApiKey :> "customers" :> Get '[JSON] CustomersResp
+       WithApiKey :> "customer"  :> ReqBody '[JSON] Customer :> Post '[JSON] (Response CustomerResp)
+ :<|>  WithApiKey :> "customer"  :> Capture "customer" UUID  :> Delete '[JSON] (Response ())
+ :<|>  WithApiKey :> "customers" :> Get '[JSON] (Response CustomersResp)
 
 
 --------------------------------------------------------------------------------
 -- client methods
 --------------------------------------------------------------------------------
 
-createAlert           :: Maybe ApiKey -> Alert -> ClientM CreateAlertResp
-getAlert              :: Maybe ApiKey -> UUID -> ClientM AlertResp
-deleteAlert           :: Maybe ApiKey -> UUID -> ClientM Resp
-setAlertStatus        :: Maybe ApiKey -> UUID -> StatusChange -> ClientM Resp
-tagAlert              :: Maybe ApiKey -> UUID -> Tags -> ClientM Resp
-untagAlert            :: Maybe ApiKey -> UUID -> Tags -> ClientM Resp
-updateAlertAttributes :: Maybe ApiKey -> UUID -> Attributes -> ClientM Resp
+createAlert           :: Maybe ApiKey -> Alert -> ClientM (Response CreateAlertResp)
+getAlert              :: Maybe ApiKey -> UUID -> ClientM (Response AlertResp)
+deleteAlert           :: Maybe ApiKey -> UUID -> ClientM (Response ())
+setAlertStatus        :: Maybe ApiKey -> UUID -> StatusChange -> ClientM (Response ())
+tagAlert              :: Maybe ApiKey -> UUID -> Tags -> ClientM (Response ())
+untagAlert            :: Maybe ApiKey -> UUID -> Tags -> ClientM (Response ())
+updateAlertAttributes :: Maybe ApiKey -> UUID -> Attributes -> ClientM (Response ())
 
 createAlert            :<|>
  getAlert              :<|>
@@ -201,7 +201,7 @@ listAlerts ::
   -> [AlertAttr]
   -> Maybe PageNo
   -> Maybe Limit
-  -> ClientM AlertsResp
+  -> ClientM (Response AlertsResp)
 alertHistory ::
      Maybe ApiKey
   -> Maybe QueryString
@@ -209,14 +209,14 @@ alertHistory ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe Limit
-  -> ClientM AlertHistoryResp
+  -> ClientM (Response AlertHistoryResp)
 countAlerts ::
      Maybe ApiKey
   -> Maybe QueryString
   -> [UUID]
   -> IsRepeat
   -> [FieldQuery]
-  -> ClientM AlertCountResp
+  -> ClientM (Response AlertCountResp)
 top10 ::
      Maybe ApiKey
   -> Maybe QueryString
@@ -224,7 +224,7 @@ top10 ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe AlertAttr
-  -> ClientM Top10Resp
+  -> ClientM (Response Top10Resp)
 flappingTop10 ::
      Maybe ApiKey
   -> Maybe QueryString
@@ -232,7 +232,7 @@ flappingTop10 ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe AlertAttr
-  -> ClientM Top10Resp
+  -> ClientM (Response Top10Resp)
 
 listAlerts    :<|>
  alertHistory :<|>
@@ -248,7 +248,7 @@ listEnvironments ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe Limit
-  -> ClientM EnvironmentsResp
+  -> ClientM (Response EnvironmentsResp)
 listEnvironments = client (Proxy :: Proxy EnvironmentApi)
 
 listServices ::
@@ -258,37 +258,37 @@ listServices ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe Limit
-  -> ClientM ServicesResp
+  -> ClientM (Response ServicesResp)
 listServices = client (Proxy :: Proxy ServiceApi)
 
-createBlackout :: Maybe ApiKey -> Blackout -> ClientM BlackoutResp
-deleteBlackout :: Maybe ApiKey -> UUID -> ClientM Resp
-listBlackouts  :: Maybe ApiKey -> ClientM BlackoutsResp
+createBlackout :: Maybe ApiKey -> Blackout -> ClientM (Response BlackoutResp)
+deleteBlackout :: Maybe ApiKey -> UUID -> ClientM (Response ())
+listBlackouts  :: Maybe ApiKey -> ClientM (Response BlackoutsResp)
 
 createBlackout  :<|> deleteBlackout :<|> listBlackouts = client (Proxy :: Proxy BlackoutApi)
 
-createHeartbeat :: Maybe ApiKey -> Heartbeat -> ClientM CreateHeartbeatResp
-getHeartbeat    :: Maybe ApiKey -> UUID -> ClientM HeartbeatResp
-deleteHeartbeat :: Maybe ApiKey -> UUID -> ClientM Resp
-listHeartbeats  :: Maybe ApiKey -> ClientM HeartbeatsResp
+createHeartbeat :: Maybe ApiKey -> Heartbeat -> ClientM (Response CreateHeartbeatResp)
+getHeartbeat    :: Maybe ApiKey -> UUID -> ClientM (Response HeartbeatResp)
+deleteHeartbeat :: Maybe ApiKey -> UUID -> ClientM (Response ())
+listHeartbeats  :: Maybe ApiKey -> ClientM (Response HeartbeatsResp)
 
 createHeartbeat :<|> getHeartbeat :<|> deleteHeartbeat :<|> listHeartbeats = client (Proxy :: Proxy HeartbeatApi)
 
-createApiKey :: ApiKey -> CreateApiKey -> ClientM CreateApiKeyResp
-deleteApiKey :: Maybe ApiKey -> ApiKey -> ClientM Resp
-listApiKeys  :: Maybe ApiKey -> ClientM ApiKeysResp
+createApiKey :: ApiKey -> CreateApiKey -> ClientM (Response CreateApiKeyResp)
+deleteApiKey :: Maybe ApiKey -> ApiKey -> ClientM (Response ())
+listApiKeys  :: Maybe ApiKey -> ClientM (Response ApiKeysResp)
 
 createApiKey :<|> deleteApiKey :<|> listApiKeys = client (Proxy :: Proxy ApiKeyApi)
 
-createUser :: Maybe ApiKey -> User -> ClientM UserResp
-deleteUser :: Maybe ApiKey -> UUID -> ClientM Resp
-updateUser :: Maybe ApiKey -> UUID -> UserAttr 'Nonempty -> ClientM Resp
-listUsers  :: Maybe ApiKey -> Maybe CustomerName -> Maybe Email -> ClientM UsersResp
+createUser :: Maybe ApiKey -> User -> ClientM (Response UserResp)
+deleteUser :: Maybe ApiKey -> UUID -> ClientM (Response ())
+updateUser :: Maybe ApiKey -> UUID -> UserAttr 'Nonempty -> ClientM (Response ())
+listUsers  :: Maybe ApiKey -> Maybe CustomerName -> Maybe Email -> ClientM (Response UsersResp)
 
 createUser :<|> deleteUser :<|> updateUser :<|> listUsers = client (Proxy :: Proxy UserApi)
 
-createCustomer :: Maybe ApiKey -> Customer -> ClientM CustomerResp
-deleteCustomer :: Maybe ApiKey -> UUID -> ClientM Resp
-listCustomers  :: Maybe ApiKey -> ClientM CustomersResp
+createCustomer :: Maybe ApiKey -> Customer -> ClientM (Response CustomerResp)
+deleteCustomer :: Maybe ApiKey -> UUID -> ClientM (Response ())
+listCustomers  :: Maybe ApiKey -> ClientM (Response CustomersResp)
 
 createCustomer :<|> deleteCustomer :<|> listCustomers = client (Proxy :: Proxy CustomerApi)
