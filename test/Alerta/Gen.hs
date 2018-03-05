@@ -508,9 +508,6 @@ genCustomersResp = CustomersResp
   <*> genMaybe genText
   <*> genUTCTime
 
--- genResp' :: Gen Resp
--- genResp' = genResp ErrorResp $ pure OkResp
-
 --------------------------------------------------------------------------------
 -- Utils
 --------------------------------------------------------------------------------
