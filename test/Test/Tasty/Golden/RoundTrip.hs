@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RecordWildCards           #-}
 
 module Test.Tasty.Golden.RoundTrip where
 
@@ -24,18 +25,26 @@ import           Test.Tasty.Providers (IsTest (..), Result, TestName, TestTree,
 --
 --------------------------------------------------------------------------------
 
-data RoundTrip =
-  forall a.
-    RoundTrip
-     (IO a)
-     (a -> IO a)
-     (a -> a -> IO (Maybe String))
-     (IO a)
-     (a -> IO ())
+data RoundTrip = forall a. RoundTrip
+  { getGolden    :: IO a
+  , getTested    :: a -> IO a
+  , cmp          :: a -> a -> IO (Maybe String)
+  , dumpOutput   :: Maybe (a -> IO String)
+  , createGolden :: IO a
+  , update       :: a -> IO ()
+  }
 
-goldenTest :: TestName -> IO a -> (a -> IO a) -> (a -> a -> IO (Maybe String)) -> IO a -> (a -> IO ()) -> TestTree
-goldenTest name golden test cmp create update =
-  singleTest name $ RoundTrip golden test cmp create update
+goldenTest
+  :: TestName
+  -> IO a
+  -> (a -> IO a)
+  -> (a -> a -> IO (Maybe String))
+  -> (Maybe (a -> IO String))
+  -> IO a
+  -> (a -> IO ())
+  -> TestTree
+goldenTest name golden test cmp dump create update =
+  singleTest name $ RoundTrip golden test cmp dump create update
 
 instance IsTest RoundTrip where
   run opts golden _ = runRoundTrip golden (lookupOption opts)
@@ -57,11 +66,11 @@ instance IsOption AcceptTests where
       )
 
 runRoundTrip :: RoundTrip -> AcceptTests -> IO Result
-runRoundTrip (RoundTrip getGolden getTested cmp create update) (AcceptTests accept) = do
+runRoundTrip (RoundTrip {..}) (AcceptTests accept) = do
   mbRef <- try getGolden
   case mbRef of
     Left e | isDoesNotExistError e -> do
-      _ <- create --TODO fix
+      _ <- createGolden --TODO fix
       return $ testPassed "Input did not exist; created"
       --TODO continue with test
     Left e    ->  throwIO e
@@ -76,7 +85,11 @@ runRoundTrip (RoundTrip getGolden getTested cmp create update) (AcceptTests acce
               update new
               return $ testPassed "Accepted the new version"
             Just reason -> do
+              d <- case dumpOutput of
+                Nothing -> return ""
+                Just f  -> f new
               evaluate . rnf $ reason
-              return $ testFailed reason
+              evaluate . rnf $ d
+              return $ testFailed $ reason ++ d
             Nothing ->
                   return $ testPassed ""

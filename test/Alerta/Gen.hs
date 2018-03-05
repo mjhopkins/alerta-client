@@ -14,16 +14,15 @@ import           Data.Text           (Text)
 import qualified Data.Text           as T
 import           Data.Time           (Day, DiffTime, UTCTime (..),
                                       fromGregorian, secondsToDiffTime)
-import           Data.Typeable       (Typeable, tyConName, typeRep,
-                                      typeRepTyCon)
+import           Data.Typeable       (Typeable, typeRep)
 import           GHC.Exts            (IsList (..))
 import           Hedgehog            (Gen, Range)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
 
 
-genRespUserResp :: Gen (Response UserResp')
-genRespUserResp = genResponse genUserResp'
+genUnit :: Gen ()
+genUnit = Gen.constant ()
 
 genResponse :: Gen a -> Gen (Response a)
 genResponse gen = Gen.choice
@@ -217,22 +216,22 @@ genExtendedHistoryItem = Gen.choice
       <*> genMaybe genCustomerName
   ]
 
-genResp :: (Text -> a) -> Gen a -> Gen a
-genResp err ok = Gen.choice [ok, err <$> genText]
+-- genResp :: (Text -> a) -> Gen a -> Gen a
+-- genResp err ok = Gen.choice [ok, err <$> genText]
 
 genCreateAlertResp :: Gen CreateAlertResp
-genCreateAlertResp = genResp ErrorCreateAlertResp $ OkCreateAlertResp
+genCreateAlertResp = CreateAlertResp
   <$> genUUID
   <*> Gen.maybe genAlertInfo
   <*> Gen.maybe genText
 
 genAlertResp :: Gen AlertResp
-genAlertResp = genResp ErrorAlertResp $ OkAlertResp
+genAlertResp = AlertResp
   <$> genAlertInfo
   <*> Gen.int (Range.linear 1 10)
 
 genAlertsResp :: Gen AlertsResp
-genAlertsResp = genResp ErrorAlertsResp $ OkAlertsResp
+genAlertsResp = AlertsResp
   <$> Gen.list [0..5] genAlertInfo
   <*> Gen.int [0..100]
   <*> genPageNo
@@ -246,7 +245,7 @@ genAlertsResp = genResp ErrorAlertsResp $ OkAlertsResp
   <*> Gen.maybe genText
 
 genAlertCountResp :: Gen AlertCountResp
-genAlertCountResp = genResp ErrorAlertCountResp $ OkAlertCountResp
+genAlertCountResp = AlertCountResp
   <$> Gen.int [0..5]
   <*> Gen.int [0..5]
   <*> Gen.int [0..5]
@@ -267,13 +266,13 @@ genTop10Info = Top10Info
   <*> Gen.list [0..3] genResourceInfo
 
 genTop10Resp :: Gen Top10Resp
-genTop10Resp = genResp ErrorTop10Resp $ OkTop10Resp
+genTop10Resp = Top10Resp
   <$> Gen.list [0..4] genTop10Info
   <*> Gen.int [0..5]
   <*> Gen.maybe genText
 
 genAlertHistoryResp :: Gen AlertHistoryResp
-genAlertHistoryResp = genResp ErrorAlertHistoryResp $ OkAlertHistoryResp
+genAlertHistoryResp = AlertHistoryResp
   <$> Gen.list [0..4] genExtendedHistoryItem
   <*> genUTCTime
   <*> Gen.maybe genText
@@ -284,7 +283,7 @@ genEnvironmentInfo = EnvironmentInfo
     <*> genEnvironment
 
 genEnvironmentsResp :: Gen EnvironmentsResp
-genEnvironmentsResp = genResp ErrorEnvironmentsResp $ OkEnvironmentsResp
+genEnvironmentsResp = EnvironmentsResp
   <$> genMaybe genText
   <*> genInt [0..5]
   <*> genList [0..5] genEnvironmentInfo
@@ -301,7 +300,7 @@ genStatusChange = StatusChange
   <*> Gen.maybe genText
 
 genServicesResp :: Gen ServicesResp
-genServicesResp = genResp ErrorServicesResp $ OkServicesResp
+genServicesResp = ServicesResp
   <$> genInt [0..5]
   <*> genList [0..5] genServiceInfo
   <*> genMaybe genText
@@ -354,12 +353,12 @@ genExtendedBlackoutInfo = ExtendedBlackoutInfo
   <*> genBlackoutStatus
 
 genBlackoutResp :: Gen BlackoutResp
-genBlackoutResp = genResp ErrorBlackoutResp $ OkBlackoutResp
+genBlackoutResp = BlackoutResp
   <$> genUUID
   <*> genBlackoutInfo
 
 genBlackoutsResp :: Gen BlackoutsResp
-genBlackoutsResp = genResp ErrorBlackoutsResp $ OkBlackoutsResp
+genBlackoutsResp = BlackoutsResp
   <$> genInt [0..5]
   <*> genList [0..5] genExtendedBlackoutInfo
   <*> genMaybe genText
@@ -386,17 +385,17 @@ genHeartbeatInfo = HeartbeatInfo
   <*> genText
 
 genCreateHeartbeatResp :: Gen CreateHeartbeatResp
-genCreateHeartbeatResp = genResp ErrorCreateHeartbeatResp $ OkCreateHeartbeatResp
+genCreateHeartbeatResp = CreateHeartbeatResp
   <$> genUUID
   <*> genHeartbeatInfo
 
 genHeartbeatResp :: Gen HeartbeatResp
-genHeartbeatResp = genResp ErrorHeartbeatResp $ OkHeartbeatResp
+genHeartbeatResp = HeartbeatResp
   <$> genHeartbeatInfo
   <*> genInt [0..5]
 
 genHeartbeatsResp :: Gen HeartbeatsResp
-genHeartbeatsResp = genResp ErrorHeartbeatsResp $ OkHeartbeatsResp
+genHeartbeatsResp = HeartbeatsResp
   <$> genList [0..5] genHeartbeatInfo
   <*> genMaybe genUTCTime
   <*> genInt [0..5]
@@ -427,12 +426,12 @@ genApiKeyInfo = ApiKeyInfo
   <*> genMaybe genCustomerName
 
 genCreateApiKeyResp :: Gen CreateApiKeyResp
-genCreateApiKeyResp = genResp ErrorCreateApiKeyResp $ OkCreateApiKeyResp
+genCreateApiKeyResp = CreateApiKeyResp
   <$> genApiKey
   <*> genApiKeyInfo
 
 genApiKeysResp :: Gen ApiKeysResp
-genApiKeysResp = genResp ErrorApiKeysResp $ OkApiKeysResp
+genApiKeysResp = ApiKeysResp
   <$> genList [0..5] genApiKeyInfo
   <*> genInt [0..5]
   <*> genUTCTime
@@ -472,17 +471,12 @@ genExtendedUserInfo = ExtendedUserInfo
   <*> genBool
 
 genUserResp :: Gen UserResp
-genUserResp = genResp ErrorUserResp $ OkUserResp
-  <$> genUUID
-  <*> genUserInfo
-
-genUserResp' :: Gen UserResp'
-genUserResp' = UserResp'
+genUserResp = UserResp
   <$> genUUID
   <*> genUserInfo
 
 genUsersResp :: Gen UsersResp
-genUsersResp = genResp ErrorUsersResp $ OkUsersResp
+genUsersResp = UsersResp
   <$> genList [0..5] genExtendedUserInfo
   <*> genInt [0..5]
   <*> genList [0..5] genText
@@ -504,19 +498,19 @@ genCustomerInfo = CustomerInfo
   <*> genRegex
 
 genCustomerResp :: Gen CustomerResp
-genCustomerResp = genResp ErrorCustomerResp $ OkCustomerResp
+genCustomerResp = CustomerResp
   <$> genUUID
   <*> genCustomerInfo
 
 genCustomersResp :: Gen CustomersResp
-genCustomersResp = genResp ErrorCustomersResp $ OkCustomersResp
+genCustomersResp = CustomersResp
   <$> genList [0..5] genCustomerInfo
   <*> genInt [0..5]
   <*> genMaybe genText
   <*> genUTCTime
 
-genResp' :: Gen Resp
-genResp' = genResp ErrorResp $ pure OkResp
+-- genResp' :: Gen Resp
+-- genResp' = genResp ErrorResp $ pure OkResp
 
 --------------------------------------------------------------------------------
 -- Utils
@@ -532,4 +526,4 @@ instance Integral t => IsList (Range t) where
 
 
 typeName :: Typeable a => p a -> String
-typeName = tyConName . typeRepTyCon . typeRep
+typeName = show . typeRep
