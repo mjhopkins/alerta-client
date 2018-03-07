@@ -5,20 +5,15 @@
 module Alerta.Hedgehog where
 
 import           Alerta.Gen
-import           Control.Arrow            ((&&&))
-import           Data.Aeson               (FromJSON, FromJSONKey, ToJSON,
-                                           ToJSONKey, decode, eitherDecode,
-                                           encode)
-import           Data.Aeson.Encode.Pretty (encodePretty)
-import           Data.Bifunctor           (bimap)
-import           Data.Text                (Text)
-import qualified Data.Text                as T
-import           Data.Typeable            (Typeable)
-import           Hedgehog                 (Gen, Property, PropertyT, forAll,
-                                           property, tripping)
-import qualified Hedgehog.Gen             as Gen
-import           Test.Tasty               (TestName, TestTree)
-import           Test.Tasty.Hedgehog      (testProperty)
+import           Control.Arrow       ((&&&))
+import           Data.Aeson          (FromJSON, FromJSONKey, ToJSON, ToJSONKey,
+                                      decode, eitherDecode, encode)
+import           Data.Typeable       (Typeable)
+import           Hedgehog            (Gen, Property, PropertyT, forAll,
+                                      property, tripping)
+import qualified Hedgehog.Gen        as Gen
+import           Test.Tasty          (TestName, TestTree)
+import           Test.Tasty.Hedgehog (testProperty)
 
 
 tests :: [TestTree]
