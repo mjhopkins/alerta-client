@@ -49,7 +49,10 @@ capitalise []      = []
 capitalise (h : t) = toUpper h : t
 
 dropRight :: Int -> [a] -> [a]
-dropRight n = reverse . drop n . reverse
+dropRight i as = go as (drop i as)
+  where
+    go (b:bs) (_:cs) = b : go bs cs
+    go _ _           = []
 
 onCamelComponents :: ([String] -> [String]) -> String -> String
 onCamelComponents f = concat . f. camelComponents
