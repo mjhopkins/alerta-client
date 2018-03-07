@@ -49,8 +49,6 @@ module Alerta.Types
   , FieldQuery
   , MatchType(..)
   , (=.), (!=), (~.), (!~)
-  -- ** Response monad
-  , Response(..)
   -- ** Alerts
   , Severity(..)
   , Status(..)
@@ -144,10 +142,7 @@ import           Data.String         (IsString (..))
 import           Data.Text           (Text)
 import qualified Data.Text           as T
 import           Data.Time           (UTCTime)
-import qualified Data.Vector         as V
-
 import           GHC.Generics
-
 import           Web.HttpApiData
 
 type Resource      = Text
@@ -1009,52 +1004,8 @@ data CustomersResp = CustomersResp
   } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
--- Responses
---------------------------------------------------------------------------------
-
-data Response a = ErrorResponse !Text | OkResponse !a
-  deriving (Eq, Show, Functor)
-
-instance Applicative Response where
-  pure = OkResponse
-  ErrorResponse t <*> _ = ErrorResponse t
-  OkResponse f <*> r    = f <$> r
-
-instance Monad Response where
-  ErrorResponse t >>= _ = ErrorResponse t
-  OkResponse a >>= f    = f a
-
-instance ToJSON a => ToJSON (Response a) where
-  toJSON (OkResponse t)    = addPair ("status", "ok") $ toJSON t
-  toJSON (ErrorResponse t) = object ["status" .= ("error" :: Text), "message" .= t]
-
-instance {-# OVERLAPPING #-} FromJSON (Response ()) where
-  parseJSON = parseResponse $ \_ -> return ()
-
-instance {-# OVERLAPPABLE #-} FromJSON a => FromJSON (Response a) where
-  parseJSON = parseResponse parseJSON
-
-parseResponse :: (Aeson.Value -> Parser a) -> Aeson.Value -> Parser (Response a)
-parseResponse v = withObject "object" $ \o -> do
-  status <- o .: "status"
-  case status of
-    "ok"    -> OkResponse <$> v (Object o)
-    "error" -> ErrorResponse <$> o .: "message"
-    other   -> fail $ "\"" ++ other ++ "\" is not a valid status"
-
--- NB unsafe!
-addPair :: Pair -> Aeson.Value -> Aeson.Value
-addPair (k, v) (Object m) = Object $ HM.insert k v m
-addPair (k, v) (Array a) | V.null a = Object $ HM.singleton k v
-addPair _ other           = error $ "Can't add a pair to " ++ name
-  where
-  name = case other of
-           Object _ -> "an object"
-           Array _  -> "an array"
-           String _ -> "a string"
-           Number _ -> "a number"
-           Bool _   -> "a boolean"
-           Null     -> "null"
+-- JSON derivations
+-------------------------------------------------------------------------------
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )

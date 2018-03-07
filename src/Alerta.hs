@@ -1,6 +1,9 @@
 {-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds   #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module: Alerta
@@ -70,14 +73,18 @@ module Alerta
   , listCustomers
   -- * Types
   , module Alerta.Types
+  , module Alerta.Response
+  , module Control.Monad.Trans.Response
   -- * Helpers
   , module Alerta.Helpers
   ) where
 
 import           Alerta.Auth
 import           Alerta.Helpers
+import           Alerta.Response
 import           Alerta.ServantExtras
 import           Alerta.Types
+import           Control.Monad.Trans.Response
 import           Servant
 import           Servant.Client
 
@@ -166,26 +173,33 @@ type CustomerApi =
  :<|>  WithApiKey :> "customer"  :> Capture "customer" UUID  :> Delete '[JSON] (Response ())
  :<|>  WithApiKey :> "customers" :> Get '[JSON] (Response CustomersResp)
 
-
 --------------------------------------------------------------------------------
 -- client methods
 --------------------------------------------------------------------------------
 
-createAlert           :: Maybe ApiKey -> Alert -> ClientM (Response CreateAlertResp)
-getAlert              :: Maybe ApiKey -> UUID -> ClientM (Response AlertResp)
-deleteAlert           :: Maybe ApiKey -> UUID -> ClientM (Response ())
-setAlertStatus        :: Maybe ApiKey -> UUID -> StatusChange -> ClientM (Response ())
-tagAlert              :: Maybe ApiKey -> UUID -> Tags -> ClientM (Response ())
-untagAlert            :: Maybe ApiKey -> UUID -> Tags -> ClientM (Response ())
-updateAlertAttributes :: Maybe ApiKey -> UUID -> Attributes -> ClientM (Response ())
+createAlert           :: Maybe ApiKey -> Alert -> ResponseT ClientM CreateAlertResp
+getAlert              :: Maybe ApiKey -> UUID -> ResponseT ClientM AlertResp
+deleteAlert           :: Maybe ApiKey -> UUID -> ResponseT ClientM ()
+setAlertStatus        :: Maybe ApiKey -> UUID -> StatusChange -> ResponseT ClientM ()
+tagAlert              :: Maybe ApiKey -> UUID -> Tags -> ResponseT ClientM ()
+untagAlert            :: Maybe ApiKey -> UUID -> Tags -> ResponseT ClientM ()
+updateAlertAttributes :: Maybe ApiKey -> UUID -> Attributes -> ResponseT ClientM ()
 
-createAlert            :<|>
- getAlert              :<|>
- deleteAlert           :<|>
- setAlertStatus        :<|>
- tagAlert              :<|>
- untagAlert            :<|>
- updateAlertAttributes = client (Proxy :: Proxy AlertApi)
+createAlert           = raise2 createAlert'
+getAlert              = raise2 getAlert'
+deleteAlert           = raise2 deleteAlert'
+setAlertStatus        = raise3 setAlertStatus'
+tagAlert              = raise3 tagAlert'
+untagAlert            = raise3 untagAlert'
+updateAlertAttributes = raise3 updateAlertAttributes'
+
+createAlert'            :<|>
+ getAlert'              :<|>
+ deleteAlert'           :<|>
+ setAlertStatus'        :<|>
+ tagAlert'              :<|>
+ untagAlert'            :<|>
+ updateAlertAttributes' = client (Proxy :: Proxy AlertApi)
 
 listAlerts ::
      Maybe ApiKey
@@ -201,7 +215,7 @@ listAlerts ::
   -> [AlertAttr]
   -> Maybe PageNo
   -> Maybe Limit
-  -> ClientM (Response AlertsResp)
+  -> ResponseT ClientM AlertsResp
 alertHistory ::
      Maybe ApiKey
   -> Maybe QueryString
@@ -209,14 +223,14 @@ alertHistory ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe Limit
-  -> ClientM (Response AlertHistoryResp)
+  -> ResponseT ClientM AlertHistoryResp
 countAlerts ::
      Maybe ApiKey
   -> Maybe QueryString
   -> [UUID]
   -> IsRepeat
   -> [FieldQuery]
-  -> ClientM (Response AlertCountResp)
+  -> ResponseT ClientM AlertCountResp
 top10 ::
      Maybe ApiKey
   -> Maybe QueryString
@@ -224,7 +238,7 @@ top10 ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe AlertAttr
-  -> ClientM (Response Top10Resp)
+  -> ResponseT ClientM Top10Resp
 flappingTop10 ::
      Maybe ApiKey
   -> Maybe QueryString
@@ -232,14 +246,20 @@ flappingTop10 ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe AlertAttr
-  -> ClientM (Response Top10Resp)
+  -> ResponseT ClientM Top10Resp
 
-listAlerts    :<|>
- alertHistory :<|>
- countAlerts  :<|>
- top10        :<|>
- _            :<|>
- flappingTop10 = client (Proxy :: Proxy AlertsApi)
+listAlerts    = raise11 listAlerts'
+alertHistory  = raise6 alertHistory'
+countAlerts   = raise5 countAlerts'
+top10         = raise6 top10'
+flappingTop10 = raise6 flappingTop10'
+
+listAlerts'    :<|>
+ alertHistory' :<|>
+ countAlerts'  :<|>
+ top10'        :<|>
+ _             :<|>
+ flappingTop10' = client (Proxy :: Proxy AlertsApi)
 
 listEnvironments ::
   Maybe ApiKey
@@ -248,8 +268,10 @@ listEnvironments ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe Limit
-  -> ClientM (Response EnvironmentsResp)
-listEnvironments = client (Proxy :: Proxy EnvironmentApi)
+  -> ResponseT ClientM EnvironmentsResp
+listEnvironments = raise6 listEnvironments'
+
+listEnvironments' = client (Proxy :: Proxy EnvironmentApi)
 
 listServices ::
      Maybe ApiKey
@@ -258,37 +280,109 @@ listServices ::
   -> IsRepeat
   -> [FieldQuery]
   -> Maybe Limit
-  -> ClientM (Response ServicesResp)
-listServices = client (Proxy :: Proxy ServiceApi)
+  -> ResponseT ClientM ServicesResp
+listServices = raise6 listServices'
 
-createBlackout :: Maybe ApiKey -> Blackout -> ClientM (Response BlackoutResp)
-deleteBlackout :: Maybe ApiKey -> UUID -> ClientM (Response ())
-listBlackouts  :: Maybe ApiKey -> ClientM (Response BlackoutsResp)
+listServices' = client (Proxy :: Proxy ServiceApi)
 
-createBlackout  :<|> deleteBlackout :<|> listBlackouts = client (Proxy :: Proxy BlackoutApi)
+createBlackout :: Maybe ApiKey -> Blackout -> ResponseT ClientM BlackoutResp
+deleteBlackout :: Maybe ApiKey -> UUID -> ResponseT ClientM ()
+listBlackouts  :: Maybe ApiKey -> ResponseT ClientM BlackoutsResp
 
-createHeartbeat :: Maybe ApiKey -> Heartbeat -> ClientM (Response CreateHeartbeatResp)
-getHeartbeat    :: Maybe ApiKey -> UUID -> ClientM (Response HeartbeatResp)
-deleteHeartbeat :: Maybe ApiKey -> UUID -> ClientM (Response ())
-listHeartbeats  :: Maybe ApiKey -> ClientM (Response HeartbeatsResp)
+createBlackout = raise2 createBlackout'
+deleteBlackout = raise2 deleteBlackout'
+listBlackouts  = raise1 listBlackouts'
 
-createHeartbeat :<|> getHeartbeat :<|> deleteHeartbeat :<|> listHeartbeats = client (Proxy :: Proxy HeartbeatApi)
+createBlackout' :<|> deleteBlackout' :<|> listBlackouts' = client (Proxy :: Proxy BlackoutApi)
 
-createApiKey :: ApiKey -> CreateApiKey -> ClientM (Response CreateApiKeyResp)
-deleteApiKey :: Maybe ApiKey -> ApiKey -> ClientM (Response ())
-listApiKeys  :: Maybe ApiKey -> ClientM (Response ApiKeysResp)
+createHeartbeat :: Maybe ApiKey -> Heartbeat -> ResponseT ClientM CreateHeartbeatResp
+getHeartbeat    :: Maybe ApiKey -> UUID -> ResponseT ClientM HeartbeatResp
+deleteHeartbeat :: Maybe ApiKey -> UUID -> ResponseT ClientM ()
+listHeartbeats  :: Maybe ApiKey -> ResponseT ClientM HeartbeatsResp
 
-createApiKey :<|> deleteApiKey :<|> listApiKeys = client (Proxy :: Proxy ApiKeyApi)
+createHeartbeat = raise2 createHeartbeat'
+getHeartbeat    = raise2 getHeartbeat'
+deleteHeartbeat = raise2 deleteHeartbeat'
+listHeartbeats  = raise1 listHeartbeats'
 
-createUser :: Maybe ApiKey -> User -> ClientM (Response UserResp)
-deleteUser :: Maybe ApiKey -> UUID -> ClientM (Response ())
-updateUser :: Maybe ApiKey -> UUID -> UserAttr 'Nonempty -> ClientM (Response ())
-listUsers  :: Maybe ApiKey -> Maybe CustomerName -> Maybe Email -> ClientM (Response UsersResp)
+createHeartbeat' :<|> getHeartbeat' :<|> deleteHeartbeat' :<|> listHeartbeats' = client (Proxy :: Proxy HeartbeatApi)
 
-createUser :<|> deleteUser :<|> updateUser :<|> listUsers = client (Proxy :: Proxy UserApi)
+createApiKey :: ApiKey -> CreateApiKey -> ResponseT ClientM CreateApiKeyResp
+deleteApiKey :: Maybe ApiKey -> ApiKey -> ResponseT ClientM ()
+listApiKeys  :: Maybe ApiKey -> ResponseT ClientM ApiKeysResp
 
-createCustomer :: Maybe ApiKey -> Customer -> ClientM (Response CustomerResp)
-deleteCustomer :: Maybe ApiKey -> UUID -> ClientM (Response ())
-listCustomers  :: Maybe ApiKey -> ClientM (Response CustomersResp)
+createApiKey = raise2 createApiKey'
+deleteApiKey = raise2 deleteApiKey'
+listApiKeys  = raise1 listApiKeys'
 
-createCustomer :<|> deleteCustomer :<|> listCustomers = client (Proxy :: Proxy CustomerApi)
+createApiKey' :<|> deleteApiKey' :<|> listApiKeys' = client (Proxy :: Proxy ApiKeyApi)
+
+createUser :: Maybe ApiKey -> User -> ResponseT ClientM UserResp
+deleteUser :: Maybe ApiKey -> UUID -> ResponseT ClientM ()
+updateUser :: Maybe ApiKey -> UUID -> UserAttr 'Nonempty -> ResponseT ClientM ()
+listUsers  :: Maybe ApiKey -> Maybe CustomerName -> Maybe Email -> ResponseT ClientM UsersResp
+
+createUser = raise2 createUser'
+deleteUser = raise2 deleteUser'
+updateUser = raise3 updateUser'
+listUsers  = raise3 listUsers'
+
+createUser' :<|> deleteUser' :<|> updateUser' :<|> listUsers' = client (Proxy :: Proxy UserApi)
+
+createCustomer :: Maybe ApiKey -> Customer -> ResponseT ClientM CustomerResp
+deleteCustomer :: Maybe ApiKey -> UUID -> ResponseT ClientM ()
+listCustomers  :: Maybe ApiKey -> ResponseT ClientM CustomersResp
+
+createCustomer = raise2 createCustomer'
+deleteCustomer = raise2 deleteCustomer'
+listCustomers  = raise1 listCustomers'
+
+createCustomer' :<|> deleteCustomer' :<|> listCustomers' = client (Proxy :: Proxy CustomerApi)
+
+compose1  :: (r -> s) -> (a -> r) -> (a -> s)
+compose2  :: (r -> s) -> (a -> b -> r) -> (a -> b -> s)
+compose3  :: (r -> s) -> (a -> b -> c -> r) -> (a -> b -> c -> s)
+compose4  :: (r -> s) -> (a -> b -> c -> d -> r) -> (a -> b -> c -> d -> s)
+compose5  :: (r -> s) -> (a -> b -> c -> d -> e -> r) -> (a -> b -> c -> d -> e -> s)
+compose6  :: (r -> s) -> (a -> b -> c -> d -> e -> f -> r) -> (a -> b -> c -> d -> e -> f -> s)
+compose7  :: (r -> s) -> (a -> b -> c -> d -> e -> f -> g -> r) -> (a -> b -> c -> d -> e -> f -> g -> s)
+compose8  :: (r -> s) -> (a -> b -> c -> d -> e -> f -> g -> h -> r) -> (a -> b -> c -> d -> e -> f -> g -> h -> s)
+compose9  :: (r -> s) -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> r) -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> s)
+compose10 :: (r -> s) -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> r) -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> s)
+compose11 :: (r -> s) -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> r) -> (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> s)
+
+compose1  = (.)
+compose2  = compose1  . (.)
+compose3  = compose2  . (.)
+compose4  = compose3  . (.)
+compose5  = compose4  . (.)
+compose6  = compose5  . (.)
+compose7  = compose6  . (.)
+compose8  = compose7  . (.)
+compose9  = compose8  . (.)
+compose10 = compose9  . (.)
+compose11 = compose10 . (.)
+
+raise1  :: (a -> m (Response r)) -> a -> ResponseT m r
+raise2  :: (a -> b -> m (Response r)) -> a -> b -> ResponseT m r
+raise3  :: (a -> b -> c -> m (Response r)) -> a -> b -> c -> ResponseT m r
+raise4  :: (a -> b -> c -> d -> m (Response r)) -> a -> b -> c -> d -> ResponseT m r
+raise5  :: (a -> b -> c -> d -> e -> m (Response r)) -> a -> b -> c -> d -> e -> ResponseT m r
+raise6  :: (a -> b -> c -> d -> e -> f -> m (Response r)) -> a -> b -> c -> d -> e -> f -> ResponseT m r
+raise7  :: (a -> b -> c -> d -> e -> f -> g -> m (Response r)) -> a -> b -> c -> d -> e -> f -> g -> ResponseT m r
+raise8  :: (a -> b -> c -> d -> e -> f -> g -> h -> m (Response r)) -> a -> b -> c -> d -> e -> f -> g -> h -> ResponseT m r
+raise9  :: (a -> b -> c -> d -> e -> f -> g -> h -> i -> m (Response r)) -> a -> b -> c -> d -> e -> f -> g -> h -> i -> ResponseT m r
+raise10 :: (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> m (Response r)) -> a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> ResponseT m r
+raise11 :: (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> m (Response r)) -> a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> ResponseT m r
+
+raise1  = compose1 ResponseT
+raise2  = compose2 ResponseT
+raise3  = compose3 ResponseT
+raise4  = compose4 ResponseT
+raise5  = compose5 ResponseT
+raise6  = compose6 ResponseT
+raise7  = compose7 ResponseT
+raise8  = compose8 ResponseT
+raise9  = compose9 ResponseT
+raise10 = compose10 ResponseT
+raise11 = compose11 ResponseT
