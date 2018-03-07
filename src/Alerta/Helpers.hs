@@ -40,7 +40,7 @@ run cl = do
 
 -- | Run a Servant client function, pretty-printing the JSON returned, and
 -- discarding the return value.
-run' :: (Show a, FromJSON a, ToJSON a) => ClientM a -> IO ()
+run' :: (FromJSON a, ToJSON a) => ClientM a -> IO ()
 run' = void . run
 
 handleError :: (FromJSON a, ToJSON a) => ServantError -> IO a
