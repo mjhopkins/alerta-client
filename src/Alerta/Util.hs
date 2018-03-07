@@ -8,18 +8,15 @@
 module Alerta.Util
   ( toOpts
   , AesonOpts(..)
-  , showTextLowercase
   , capitalise
   , uncapitalise
   , onCamelComponents
   , dropRight
   ) where
 
-import           Data.Aeson.TH            as Aeson
+import           Data.Aeson.TH as Aeson
 import           Data.Char
-import           Data.Default             
-import qualified Data.Text                as T
-import           Data.Text                (Text)
+import           Data.Default
 
 data AesonOpts = AesonOpts { tag :: String, unwrap :: Bool }
 
@@ -36,9 +33,6 @@ toOpts k n (AesonOpts f u) = Aeson.defaultOptions {
   , unwrapUnaryRecords     = u
   , sumEncoding            = TaggedObject { tagFieldName = f, contentsFieldName = "contents" }
 }
-
-showTextLowercase :: Show a => a -> Text
-showTextLowercase = T.toLower . T.pack . show
 
 uncapitalise :: String -> String
 uncapitalise []      = []
@@ -63,6 +57,5 @@ camelComponents = go [] ""
     go :: [String] -> String -> String -> [String]
     go ws w (x:u:l:xs) | isUpper u && isLower l = go ((x:w):ws) [l, u] xs
     go ws w (l:u:xs)   | isUpper u && isLower l = go ((l:w):ws) [u] xs
-    go ws w (x:xs)                              = go ws (x:w) xs
-    go ws w ""                                  = reverse (map reverse (w:ws))
-
+    go ws w (x:xs)     = go ws (x:w) xs
+    go ws w ""         = reverse (map reverse (w:ws))

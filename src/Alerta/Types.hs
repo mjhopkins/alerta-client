@@ -126,15 +126,13 @@ module Alerta.Types
 import           Alerta.Util
 
 import           Control.Applicative (empty)
-
 import           Data.Aeson          hiding (Value)
-import qualified Data.Aeson          as Aeson
 import qualified Data.Aeson.Encoding as E
 import           Data.Aeson.TH
 import           Data.Aeson.Types    hiding (Value)
+import           Data.Char           (toLower)
 import           Data.Coerce         (coerce)
 import           Data.Default
-import qualified Data.HashMap.Strict as HM
 import           Data.Ix
 import           Data.Map            (Map)
 import           Data.Monoid         ((<>))
@@ -252,45 +250,72 @@ instance IsString QueryAttr where
 instance ToHttpApiData QueryAttr where
   toQueryParam = T.pack . uncapitalise . onCamelComponents (dropRight 2) . show
 
+--------------------------------------------------------------------------------
+-- Severity
+--------------------------------------------------------------------------------
+
 -- | Alert severity
 data Severity =
-    Unknown
-  | Trace         -- ^ 8 (grey)
-  | Debug         -- ^ 7 (purple)
-  | Informational -- ^ 6 (green)
-  | Ok            -- ^ 5 (green)
-  | Normal        -- ^ 5 (green)
-  | Cleared       -- ^ 5 (green)
-  | Indeterminate -- ^ 5 (silver)
-  | Warning       -- ^ 4 (blue)
-  | Minor         -- ^ 3 (yellow)
-  | Major         -- ^ 2 (orange)
-  | Critical      -- ^ 1 (red)
-  | Security      -- ^ 0 (black)
+    UnknownSeverity
+  | TraceSeverity         -- ^ 8 (grey)
+  | DebugSeverity         -- ^ 7 (purple)
+  | InformationalSeverity -- ^ 6 (green)
+  | OkSeverity            -- ^ 5 (green)
+  | NormalSeverity        -- ^ 5 (green)
+  | ClearedSeverity       -- ^ 5 (green)
+  | IndeterminateSeverity -- ^ 5 (silver)
+  | WarningSeverity       -- ^ 4 (blue)
+  | MinorSeverity         -- ^ 3 (yellow)
+  | MajorSeverity         -- ^ 2 (orange)
+  | CriticalSeverity      -- ^ 1 (red)
+  | SecuritySeverity      -- ^ 0 (black)
   deriving (Eq, Ord, Bounded, Enum, Ix, Show, Read, Generic)
 
+severityToString :: Severity -> String
+severityToString = fmap toLower . dropRight (length ("Severity" :: String)) . show
+
 instance ToHttpApiData Severity where
-  toUrlPiece = T.pack . show
+  toUrlPiece = T.pack . severityToString
 
 instance ToJSONKey Severity where
-  toJSONKey = toJSONKeyText (T.toLower . T.pack . show)
+  toJSONKey = toJSONKeyText (T.pack . severityToString)
 
 instance FromJSONKey Severity where
   fromJSONKey = FromJSONKeyTextParser $ \case
-    "security"      -> pure Security
-    "critical"      -> pure Critical
-    "major"         -> pure Major
-    "minor"         -> pure Minor
-    "warning"       -> pure Warning
-    "indeterminate" -> pure Indeterminate
-    "cleared"       -> pure Cleared
-    "normal"        -> pure Normal
-    "ok"            -> pure Ok
-    "informational" -> pure Informational
-    "debug"         -> pure Debug
-    "trace"         -> pure Trace
-    "unknown"       -> pure Unknown
+    "unknown"       -> pure UnknownSeverity
+    "trace"         -> pure TraceSeverity
+    "debug"         -> pure DebugSeverity
+    "informational" -> pure InformationalSeverity
+    "ok"            -> pure OkSeverity
+    "normal"        -> pure NormalSeverity
+    "cleared"       -> pure ClearedSeverity
+    "indeterminate" -> pure IndeterminateSeverity
+    "warning"       -> pure WarningSeverity
+    "minor"         -> pure MinorSeverity
+    "major"         -> pure MajorSeverity
+    "critical"      -> pure CriticalSeverity
+    "security"      -> pure SecuritySeverity
     other           -> fail $ "Could not parse key \"" ++ T.unpack other ++ "\" as Severity"
+
+instance IsString Severity where
+  fromString "unknown"       = UnknownSeverity
+  fromString "trace"         = TraceSeverity
+  fromString "debug"         = DebugSeverity
+  fromString "ok"            = OkSeverity
+  fromString "normal"        = NormalSeverity
+  fromString "cleared"       = ClearedSeverity
+  fromString "warning"       = WarningSeverity
+  fromString "indeterminate" = IndeterminateSeverity
+  fromString "minor"         = MinorSeverity
+  fromString "major"         = MajorSeverity
+  fromString "critical"      = CriticalSeverity
+  fromString "informational" = InformationalSeverity
+  fromString "security"      = SecuritySeverity
+  fromString other           = error $ "\"" ++ other ++ "\" is not a valid Severity"
+
+--------------------------------------------------------------------------------
+-- Status
+--------------------------------------------------------------------------------
 
 -- | Status of an alert.
 data Status =     --  Status Code
@@ -302,18 +327,20 @@ data Status =     --  Status Code
   | UnknownStatus -- ^ status code 9
   deriving (Eq, Ord, Bounded, Enum, Ix, Show, Read, Generic)
 
+statusToString :: IsString s => Status -> s
+statusToString = \case
+  OpenStatus    -> "open"
+  AssignStatus  -> "assign"
+  AckStatus     -> "ack"
+  ClosedStatus  -> "closed"
+  ExpiredStatus -> "expired"
+  UnknownStatus -> "unknown"
+
 instance ToHttpApiData Status where
-  toUrlPiece = showTextLowercase
+  toUrlPiece = statusToString
 
 instance ToJSONKey Status where
-  -- toJSONKey = toJSONKeyText (T.toLower . T.pack . show)
-  toJSONKey = toJSONKeyText $ \case
-    OpenStatus    -> "open"
-    AssignStatus  -> "assign"
-    AckStatus     -> "ack"
-    ClosedStatus  -> "closed"
-    ExpiredStatus -> "expired"
-    UnknownStatus -> "unknown"
+  toJSONKey = toJSONKeyText statusToString
 
 instance FromJSONKey Status where
   fromJSONKey = FromJSONKeyTextParser $ \case
@@ -324,6 +351,19 @@ instance FromJSONKey Status where
     "expired" -> pure ExpiredStatus
     "unknown" -> pure UnknownStatus
     other     -> fail $ "Could not parse key \"" ++ T.unpack other ++ "\" as Status"
+
+instance IsString Status where
+  fromString "open"    = OpenStatus
+  fromString "assign"  = AssignStatus
+  fromString "ack"     = AckStatus
+  fromString "closed"  = ClosedStatus
+  fromString "expired" = ExpiredStatus
+  fromString "unknown" = UnknownStatus
+  fromString other     = error $ "\"" ++ other ++ "\" is not a valid Status"
+
+--------------------------------------------------------------------------------
+-- Trend indication
+--------------------------------------------------------------------------------
 
 data TrendIndication = NoChange | LessSevere | MoreSevere
   deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
@@ -1007,7 +1047,7 @@ data CustomersResp = CustomersResp
 -- JSON derivations
 -------------------------------------------------------------------------------
 
-$( deriveJSON (toOpts 0 0 def)                    ''Severity             )
+$( deriveJSON (toOpts 1 1 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )
 $( deriveJSON (toOpts 1 1 def)                    ''Alert                )
 $( deriveJSON (toOpts 0 0 def { unwrap = False }) ''Tags                 )

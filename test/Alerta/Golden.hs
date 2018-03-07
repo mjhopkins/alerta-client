@@ -6,7 +6,7 @@ module Alerta.Golden where
 
 import           Alerta.Gen
 import           Data.Aeson                  (FromJSON, ToJSON,
-                                              eitherDecodeStrict, encode)
+                                              eitherDecodeStrict)
 import           Data.Aeson.Encode.Pretty    (Config (..), Indent (Spaces),
                                               NumberFormat (Generic),
                                               encodePretty', keyOrder)
