@@ -1,7 +1,15 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Control.Monad.Trans.Response where
+module Control.Monad.Trans.Response
+  ( ResponseT(..)
+  , runResponseT
+  , runResponseT'
+  , describeResponse
+  , mapErrorResponse
+  , throw
+  , catch
+  ) where
 
 import           Alerta.Response
 
@@ -27,19 +35,25 @@ import           Data.Text                 (Text)
 -- Isomorphic to ExceptT Text
 --------------------------------------------------------------------------------
 
-newtype ResponseT m a = ResponseT { runResponse :: m (Response a) }
+newtype ResponseT m a = ResponseT { unResponseT :: m (Response a) }
 
-runResponse' :: Functor m => (Text -> b) -> (a -> b) -> ResponseT m a -> m b
-runResponse' err ok = fmap (foldResponse err ok) . runResponse
+runResponseT :: Functor m => ResponseT m a -> m (Either Text a)
+runResponseT = runResponseT' Left Right
 
-describe :: Monad m => Text -> ResponseT m a -> ResponseT m a
-describe t = mapErrorResponse (mappend t)
+runResponseT' :: Functor m => (Text -> b) -> (a -> b) -> ResponseT m a -> m b
+runResponseT' err ok = fmap (foldResponse err ok) . unResponseT
+
+describeResponse :: Monad m => Text -> ResponseT m a -> ResponseT m a
+describeResponse = mapErrorResponse . mappend
 
 mapErrorResponse :: Functor m => (Text -> Text) -> ResponseT m a -> ResponseT m a
-mapErrorResponse f = ResponseT . fmap (mapErrorText f) . runResponse
+mapErrorResponse = onResponse . mapErrorText
+
+onResponse :: Functor m => (Response a -> Response b) -> ResponseT m a -> ResponseT m b
+onResponse f = ResponseT . fmap f . unResponseT
 
 instance Functor m => Functor (ResponseT m) where
-  fmap f = ResponseT . fmap (fmap f) . runResponse
+  fmap = onResponse . fmap
   {-# INLINE fmap #-}
 
 instance Foldable m => Foldable (ResponseT m) where
@@ -48,11 +62,11 @@ instance Foldable m => Foldable (ResponseT m) where
 
 instance Traversable m => Traversable (ResponseT m) where
   traverse f (ResponseT m) = ResponseT <$>
-    traverse (foldResponse (pure . ErrorResponse) (fmap OkResponse . f)) m
+    traverse (foldResponse (pure . Error) (fmap Ok . f)) m
   {-# INLINE traverse #-}
 
 instance Applicative m => Applicative (ResponseT m) where
-  pure = ResponseT . pure . OkResponse
+  pure = ResponseT . pure . Ok
   {-# INLINE pure #-}
   ResponseT f <*> ResponseT v = ResponseT $ getCompose $ Compose f <*> Compose v
   {-# INLINE (<*>) #-}
@@ -64,12 +78,11 @@ instance Monad m => Alternative (ResponseT m) where
   {-# INLINE (<|>) #-}
 
 instance Monad m => Monad (ResponseT m) where
-  return = ResponseT . return . OkResponse
+  return = ResponseT . return . Ok
   {-# INLINE return #-}
 
-  m >>= k = ResponseT $ do
-    runResponse m >>=
-      foldResponse (return . ErrorResponse) (runResponse . k)
+  ResponseT m >>= k = ResponseT $
+   m >>= foldResponse (return . Error) (unResponseT . k)
 
   fail = ResponseT . fail
   {-# INLINE (>>=) #-}
@@ -81,15 +94,15 @@ instance MonadFail m => MonadFail (ResponseT m) where
 #endif
 
 instance Monad m => MonadPlus (ResponseT m) where
-  mzero = ResponseT . return . ErrorResponse $ ""
+  mzero = ResponseT . return . Error $ ""
   {-# INLINE mzero #-}
-  ResponseT ma `mplus` ResponseT mb = ResponseT $ do
-    ma >>= foldResponse (const mb) (return . OkResponse)
+  ResponseT ma `mplus` ResponseT mb = ResponseT $
+    ma >>= foldResponse (const mb) (return . Ok)
   {-# INLINEABLE mplus #-}
 
 instance MonadFix m => MonadFix (ResponseT m) where
-  mfix f = ResponseT (mfix (runResponse . f . foldResponse (const eek) id))
-    where eek = error "mfix (ResponseT): inner computation returned ErrorResponse"
+  mfix f = ResponseT (mfix (unResponseT . f . foldResponse (const eek) id))
+    where eek = error "mfix (ResponseT): inner computation returned Error"
   {-# INLINE mfix #-}
 
 instance MonadIO m => MonadIO (ResponseT m) where
@@ -97,7 +110,7 @@ instance MonadIO m => MonadIO (ResponseT m) where
   {-# INLINE liftIO #-}
 
 instance MonadTrans ResponseT where
-  lift = ResponseT . fmap OkResponse
+  lift = ResponseT . fmap Ok
   {-# INLINE lift #-}
 
 #if MIN_VERSION_base(4,4,0)
@@ -107,8 +120,8 @@ instance MonadZip m => MonadZip (ResponseT m) where
 #endif
 
 throw :: Applicative m => Text -> ResponseT m a
-throw = ResponseT . pure . ErrorResponse
+throw = ResponseT . pure . Error
 
 catch :: Monad m => ResponseT m a -> (Text -> ResponseT m a) -> ResponseT m a
-ResponseT ma `catch` h = ResponseT $ do
-  ma >>= foldResponse (runResponse . h) (return . OkResponse)
+ResponseT ma `catch` h = ResponseT $
+  ma >>= foldResponse (unResponseT . h) (return . Ok)

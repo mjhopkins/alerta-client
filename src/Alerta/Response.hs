@@ -8,9 +8,11 @@ module Alerta.Response
   , mapErrorText
   ) where
 
-import           Control.Applicative
-import           Control.Monad
-import           Data.Aeson.Types
+import           Control.Applicative (Alternative (..))
+import           Control.Monad       (MonadPlus (..))
+import           Data.Aeson.Types    (FromJSON (..), Pair, Parser, ToJSON (..),
+                                      Value (..), object, withObject, (.:),
+                                      (.=))
 import qualified Data.HashMap.Strict as HM
 import           Data.Text           (Text)
 import qualified Data.Vector         as V
@@ -19,15 +21,15 @@ import qualified Data.Vector         as V
 -- Response monad
 --------------------------------------------------------------------------------
 
-data Response a = ErrorResponse !Text | OkResponse !a
+data Response a = Error !Text | Ok !a
   deriving (Eq, Show)
 
 foldResponse :: (Text -> b) -> (a -> b) -> Response a -> b
-foldResponse err _ (ErrorResponse t) = err t
-foldResponse _ ok  (OkResponse a)    = ok a
+foldResponse err _ (Error t) = err t
+foldResponse _ ok  (Ok a)    = ok a
 
 bimapResponse :: (Text -> Text) -> (a -> b) -> Response a -> Response b
-bimapResponse err ok = foldResponse (ErrorResponse . err) (OkResponse . ok)
+bimapResponse err ok = foldResponse (Error . err) (Ok . ok)
 
 mapErrorText :: (Text -> Text) -> Response a -> Response a
 mapErrorText = flip bimapResponse id
@@ -36,26 +38,26 @@ instance Functor Response where
   fmap = bimapResponse id
 
 instance Applicative Response where
-  pure = OkResponse
-  ErrorResponse t <*> _ = ErrorResponse t
-  OkResponse f <*> r    = f <$> r
+  pure = Ok
+  Error t <*> _ = Error t
+  Ok f <*> r    = f <$> r
 
 instance Alternative Response where
   empty = mzero
   (<|>) = mplus
 
 instance Monad Response where
-  ErrorResponse t >>= _ = ErrorResponse t
-  OkResponse a >>= f    = f a
+  Error t >>= _ = Error t
+  Ok a >>= f    = f a
 
 instance MonadPlus Response where
-  mzero = ErrorResponse ""
-  ErrorResponse _ `mplus` r = r
-  OkResponse a `mplus` _    = OkResponse a
+  mzero = Error ""
+  Error _ `mplus` r = r
+  Ok a `mplus` _    = Ok a
 
 instance ToJSON a => ToJSON (Response a) where
-  toJSON (OkResponse t)    = addPair ("status", "ok") $ toJSON t
-  toJSON (ErrorResponse t) = object ["status" .= ("error" :: Text), "message" .= t]
+  toJSON (Ok t)    = addPair ("status", "ok") $ toJSON t
+  toJSON (Error t) = object ["status" .= ("error" :: Text), "message" .= t]
 
 instance {-# OVERLAPPING #-} FromJSON (Response ()) where
   parseJSON = parseResponse $ \_ -> return ()
@@ -67,8 +69,8 @@ parseResponse :: (Value -> Parser a) -> Value -> Parser (Response a)
 parseResponse v = withObject "object" $ \o -> do
   status <- o .: "status"
   case status of
-    "ok"    -> OkResponse <$> v (Object o)
-    "error" -> ErrorResponse <$> o .: "message"
+    "ok"    -> Ok <$> v (Object o)
+    "error" -> Error <$> o .: "message"
     other   -> fail $ "\"" ++ other ++ "\" is not a valid status"
 
 -- NB unsafe!

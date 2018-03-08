@@ -26,7 +26,7 @@ genUnit = Gen.constant ()
 
 genResponse :: Gen a -> Gen (Response a)
 genResponse gen = Gen.choice
-  [ OkResponse <$> gen, ErrorResponse <$> genText ]
+  [ Ok <$> gen, Error <$> genText ]
 
 genSeverity :: Gen Severity
 genSeverity = Gen.enumBounded
