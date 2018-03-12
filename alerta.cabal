@@ -24,7 +24,7 @@ description:
 
 flag servant-client-core
   description: Use servant-client-core
-  default:     True
+  default:     False
   manual:      False
 
 library
