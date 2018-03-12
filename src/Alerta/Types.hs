@@ -1,11 +1,12 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE KindSignatures     #-}
-{-# LANGUAGE LambdaCase         #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures    #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -27,6 +28,7 @@ module Alerta.Types
   , Service
   , Environment
   , Group
+  , Value
   , Origin
   , AlertType
   , UserName
@@ -121,24 +123,29 @@ module Alerta.Types
   , CustomerInfo(..)
   , CustomerResp(..)
   , CustomersResp(..)
+
+  , Response(..)
+  , UserResp'(..)
   ) where
 
 import           Alerta.Util
 
 import           Control.Applicative (empty)
 
-import           Data.Aeson
+import           Data.Aeson          hiding (Value)
+import qualified Data.Aeson          as Aeson
 import qualified Data.Aeson.Encoding as E
-import           Data.Aeson.Types
 import           Data.Aeson.TH
+import           Data.Aeson.Types    hiding (Value)
 import           Data.Coerce         (coerce)
 import           Data.Default
+import qualified Data.HashMap.Strict as HM
 import           Data.Ix
 import           Data.Map            (Map)
 import           Data.Monoid         ((<>))
-import           Data.String         (IsString(..))
-import qualified Data.Text as        T
+import           Data.String         (IsString (..))
 import           Data.Text           (Text)
+import qualified Data.Text           as T
 import           Data.Time           (UTCTime)
 
 import           GHC.Generics
@@ -150,6 +157,7 @@ type Event         = Text
 type Service       = Text
 type Environment   = Text
 type Group         = Text
+type Value         = Text
 type Origin        = Text
 type AlertType     = Text
 type UserName      = Text
@@ -305,7 +313,14 @@ instance ToHttpApiData Status where
   toUrlPiece = showTextLowercase
 
 instance ToJSONKey Status where
-  toJSONKey = toJSONKeyText (T.toLower . T.pack . show)
+  -- toJSONKey = toJSONKeyText (T.toLower . T.pack . show)
+  toJSONKey = toJSONKeyText $ \case
+    OpenStatus    -> "open"    
+    AssignStatus  -> "assign"      
+    AckStatus     -> "ack"   
+    ClosedStatus  -> "closed"      
+    ExpiredStatus -> "expired"       
+    UnknownStatus -> "unknown"       
 
 instance FromJSONKey Status where
   fromJSONKey = FromJSONKeyTextParser $ \case
@@ -349,7 +364,7 @@ data Alert = Alert
   , alertValue       :: Maybe Value     -- ^ defaults to @n/a@
   , alertText        :: Maybe Text
   , alertTags        :: Maybe [Tag]
-  , alertAttributes  :: Maybe (Map Text Text)
+  , alertAttributes  :: Maybe (Map Text Text) --TODO Attributes
   -- Attribute keys must not contain "." or "$"
   -- note that key "ip" will be overwritten
   , alertOrigin      :: Maybe Origin    -- ^ defaults to prog\/machine ('%s\/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1]))
@@ -543,32 +558,32 @@ data StatusChange = StatusChange
   } deriving (Eq, Show, Generic)
 
 data CreateAlertResp = OkCreateAlertResp
-  { okCreateAlertRespId         :: UUID
-  , okCreateAlertRespAlert      :: Maybe AlertInfo -- ^ not present if rate limited or in blackout
-  , okCreateAlertRespMessage    :: Maybe Text      -- ^ present when rate limited or in blackout
+  { okCreateAlertRespId      :: UUID
+  , okCreateAlertRespAlert   :: Maybe AlertInfo -- ^ not present if rate limited or in blackout
+  , okCreateAlertRespMessage :: Maybe Text      -- ^ present when rate limited or in blackout
   } | ErrorCreateAlertResp {
     errorCreateAlertRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 data AlertResp = OkAlertResp
-  { okAlertRespAlert      :: AlertInfo
-  , okAlertRespTotal      :: Int
+  { okAlertRespAlert :: AlertInfo
+  , okAlertRespTotal :: Int
   } | ErrorAlertResp {
     errorAlertRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 data AlertsResp = OkAlertsResp
-  { okAlertsRespAlerts           :: [AlertInfo]
-  , okAlertsRespTotal            :: Int
-  , okAlertsRespPage             :: PageNo
-  , okAlertsRespPageSize         :: Int
-  , okAlertsRespPages            :: Int
-  , okAlertsRespMore             :: Bool
-  , okAlertsRespSeverityCounts   :: Maybe (Map Severity Int)
-  , okAlertsRespStatusCounts     :: Maybe (Map Status Int)
-  , okAlertsRespLastTime         :: UTCTime
-  , okAlertsRespAutoRefresh      :: Bool
-  , okAlertsRespMessage          :: Maybe Text
+  { okAlertsRespAlerts         :: [AlertInfo]
+  , okAlertsRespTotal          :: Int
+  , okAlertsRespPage           :: PageNo
+  , okAlertsRespPageSize       :: Int
+  , okAlertsRespPages          :: Int
+  , okAlertsRespMore           :: Bool
+  , okAlertsRespSeverityCounts :: Maybe (Map Severity Int)
+  , okAlertsRespStatusCounts   :: Maybe (Map Status Int)
+  , okAlertsRespLastTime       :: UTCTime
+  , okAlertsRespAutoRefresh    :: Bool
+  , okAlertsRespMessage        :: Maybe Text
   } | ErrorAlertsResp
   { errorAlertsRespMessage       :: Text
   } deriving (Eq, Show, Generic)
@@ -788,10 +803,10 @@ data HeartbeatResp = OkHeartbeatResp
   } deriving (Eq, Show, Generic)
 
 data HeartbeatsResp = OkHeartbeatsResp
-  { heartbeatsRespHeartbeats   :: [HeartbeatInfo]
-  , heartbeatsRespTime         :: Maybe UTCTime
-  , heartbeatsRespTotal        :: Int
-  , heartbeatsRespMessage      :: Maybe Text
+  { heartbeatsRespHeartbeats :: [HeartbeatInfo]
+  , heartbeatsRespTime       :: Maybe UTCTime
+  , heartbeatsRespTotal      :: Int
+  , heartbeatsRespMessage    :: Maybe Text
   } | ErrorHeartbeatsResp
   { heartbeatsRespErrorMessage :: Text
   } deriving (Eq, Show, Generic)
@@ -858,17 +873,17 @@ data ApiKeyInfo = ApiKeyInfo
   } deriving (Eq, Show, Generic)
 
 data CreateApiKeyResp = OkCreateApiKeyResp
-  { okCreateApiKeyRespKey        :: ApiKey
-  , okCreateApiKeyRespData       :: ApiKeyInfo
+  { okCreateApiKeyRespKey  :: ApiKey
+  , okCreateApiKeyRespData :: ApiKeyInfo
   } | ErrorCreateApiKeyResp
   { errorCreateApiKeyRespMessage :: Text
   } deriving (Eq, Show, Generic)
 
 data ApiKeysResp = OkApiKeysResp
-  { okApiKeysRespKeys       :: [ApiKeyInfo]
-  , okApiKeysRespTotal      :: Int
-  , okApiKeysRespTime       :: UTCTime
-  , okApiKeysRespMessage    :: Maybe Text
+  { okApiKeysRespKeys    :: [ApiKeyInfo]
+  , okApiKeysRespTotal   :: Int
+  , okApiKeysRespTime    :: UTCTime
+  , okApiKeysRespMessage :: Maybe Text
   } | ErrorApiKeysResp
   { errorApiKeysRespMessage :: Text
   } deriving (Eq, Show, Generic)
@@ -888,7 +903,7 @@ data User = User
   , userProvider      :: Maybe Provider
   , userText          :: Maybe Text
   , userEmailVerified :: Maybe Bool
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 -- | Create a user with just the mandatory fields.
 user :: UserName -> Email -> Password -> User
@@ -977,7 +992,7 @@ data UserInfo = UserInfo
   , userInfoLogin          :: Email
   , userInfoText           :: Text
   , userInfoEmail_verified :: Bool
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data RoleType = UserRoleType | AdminRoleType
  deriving (Eq, Ord, Bounded, Enum, Ix, Show, Generic)
@@ -991,14 +1006,19 @@ data ExtendedUserInfo = ExtendedUserInfo
   , extendedUserInfoRole           :: RoleType
   , extendedUserInfoText           :: Text
   , extendedUserInfoEmail_verified :: Bool
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data UserResp = OkUserResp
   { okUserRespId   :: UUID
   , okUserRespUser :: UserInfo
   } | ErrorUserResp {
     errorUserRespMessage :: Text
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
+
+data UserResp' = UserResp'
+  { userResp'Id   :: UUID
+  , userResp'User :: UserInfo
+  } deriving (Eq, Show, Generic)
 
 data UsersResp = OkUsersResp
   { okUsersRespUsers   :: [ExtendedUserInfo]
@@ -1011,7 +1031,7 @@ data UsersResp = OkUsersResp
   , okUsersRespMessage :: Maybe Text
   } | ErrorUsersResp {
     errorUsersResp :: Text
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- Customers
@@ -1020,20 +1040,20 @@ data UsersResp = OkUsersResp
 data Customer = Customer
   { customerCustomer :: CustomerName
   , customerMatch    :: Text -- regex, apparently
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data CustomerInfo = CustomerInfo
   { customerInfoId       :: UUID
   , customerInfoCustomer :: CustomerName
   , customerInfoMatch    :: Text -- regex, apparently
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data CustomerResp = OkCustomerResp
-  { okCustomerRespId         :: UUID
-  , okCustomerRespCustomer   :: CustomerInfo
+  { okCustomerRespId       :: UUID
+  , okCustomerRespCustomer :: CustomerInfo
   } | ErrorCustomerResp {
     errorCustomerRespMessage :: Text
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
 
 data CustomersResp = OkCustomersResp
   { okCustomersRespCustomers :: [CustomerInfo]
@@ -1042,7 +1062,51 @@ data CustomersResp = OkCustomersResp
   , okCustomersRespTime      :: UTCTime
   } | ErrorCustomersResp {
     errorCustomersMessage    :: Text
-  } deriving (Show, Generic)
+  } deriving (Eq, Show, Generic)
+
+--------------------------------------------------------------------------------
+-- Responses
+--------------------------------------------------------------------------------
+
+data Response a = ErrorResponse !Text | OkResponse a
+  deriving (Eq, Show, Functor)
+
+instance Applicative Response where
+  pure = OkResponse
+  ErrorResponse t <*> _ = ErrorResponse t
+  OkResponse f <*> r    = f <$> r
+
+instance Monad Response where
+  ErrorResponse t >>= f = ErrorResponse t
+  OkResponse a >>= f    = f a
+
+instance ToJSON a => ToJSON (Response a) where
+  toJSON (OkResponse t)    = addPair ("status", "ok") $ toJSON t
+  toJSON (ErrorResponse t) = object ["status" .= ("error" :: Text), "message" .= t]
+
+instance FromJSON a => FromJSON (Response a) where
+  parseJSON = withObject "object" $ \o -> do
+    status <- o .: "status"
+    case status of
+      "ok"    -> OkResponse <$> parseJSON (Object o)
+      "error" -> ErrorResponse <$> o .: "message"
+      other   -> fail $ "\"" ++ other ++ "\" is not a valid status"
+
+-- NB unsafe!
+addPair :: Pair -> Aeson.Value -> Aeson.Value
+addPair (k, v) (Object m) = Object $ HM.insert k v m
+addPair _ other           = error $ "Can't add a pair to " ++ name
+  where
+  name = case other of
+           Object _ -> "an object"
+           Array _  -> "an array"
+           String _ -> "a string"
+           Number _ -> "a number"
+           Bool _   -> "a boolean"
+           Null     -> "null"
+
+$( deriveJSON (toOpts 2 2 def)                    ''UserResp'            )
+
 
 $( deriveJSON (toOpts 0 0 def)                    ''Severity             )
 $( deriveJSON (toOpts 1 1 def)                    ''Status               )
