@@ -48,7 +48,6 @@ library
                    , text                 >= 1.2.2   && < 1.3
                    , time                 >= 1.6     && < 1.9
                    , unordered-containers >= 0.1.0.0 && < 1.0.0.0
-                   , lens
 
   if flag(servant-client-core)
     cpp-options: -DHAS_CLIENT_CORE=1
